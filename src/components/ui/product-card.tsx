@@ -8,6 +8,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Heart, ShoppingCart } from "lucide-react"
+import { useCart } from "@/context/cart-context";
+
 
 interface Product {
   id: string
@@ -26,11 +28,19 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [isLiked, setIsLiked] = useState(false)
+  const { addItem } = useCart()
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    // Mock add to cart - no toast notification
-  }
+    e.preventDefault();  
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+    });
+  };
 
   const handleToggleLike = (e: React.MouseEvent) => {
     e.preventDefault()

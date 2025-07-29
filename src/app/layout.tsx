@@ -4,6 +4,9 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
+import  {CartProvider}  from "../context/cart-provider"
+import Cart from "@/components/cart/Cart"
+
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -18,14 +21,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    
     <html lang="es">
       <body className={inter.className}>
+        
         <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+          <CartProvider>
+            <Navbar />
+            <Cart  />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            </CartProvider>
+          </div>
+        
       </body>
     </html>
+    
+    
   )
 }

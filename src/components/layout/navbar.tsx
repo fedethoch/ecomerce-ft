@@ -7,12 +7,18 @@ import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ShoppingCart, User, Menu, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useCart } from "@/context/cart-context";
+import Cart from "@/components/cart/Cart";
+
 
 export function Navbar() {
-  const [cartItems] = useState(3) // Mock cart items
-
+  
+  const { cart, setIsOpen, isOpen } = useCart();
+  const [cartItems] = useState(cart.length) 
+  
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -55,17 +61,13 @@ export function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <User className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="hidden md:flex" >
+              <User className="h-5 w-5" /> 
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
               <ShoppingCart className="h-5 w-5" />
-              {cartItems > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                  {cartItems}
-                </Badge>
-              )}
             </Button>
+
 
             {/* Mobile Menu */}
             <Sheet>
@@ -100,6 +102,10 @@ export function Navbar() {
           </div>
         </div>
       </div>
-    </header>
+      </header>
+      <Cart />
+    </>
+    
+    
   )
 }
