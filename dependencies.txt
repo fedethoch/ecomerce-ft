@@ -1,0 +1,7 @@
+npm install class-variance-authority
+npm install @radix-ui/react-slot
+npm install @radix-ui/react-dialog
+npm install tailwind-merge
+npm install next-themes
+
+https://tailwindcss.com/docs/installation/framework-guides/nextjs

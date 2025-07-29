@@ -1,0 +1,132 @@
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
+interface ProductFiltersProps {
+  onFilterChange: (filters: any) => void
+}
+
+export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
+  const [filters, setFilters] = useState({
+    category: "all",
+    priceRange: [0, 100000],
+    sizes: [] as string[],
+  })
+
+  const categories = [
+    { id: "all", label: "Todas las categorías" },
+    { id: "hombre", label: "Hombre" },
+    { id: "mujer", label: "Mujer" },
+    { id: "accesorios", label: "Accesorios" },
+  ]
+
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"]
+
+  const handleCategoryChange = (category: string) => {
+    const newFilters = { ...filters, category }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const handlePriceChange = (value: number[]) => {
+    const newFilters = { ...filters, priceRange: value }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const handleSizeChange = (size: string, checked: boolean) => {
+    const newSizes = checked ? [...filters.sizes, size] : filters.sizes.filter((s) => s !== size)
+    const newFilters = { ...filters, sizes: newSizes }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  const clearFilters = () => {
+    const newFilters = {
+      category: "all",
+      priceRange: [0, 100000],
+      sizes: [],
+    }
+    setFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
+  return (
+    <Card className="sticky top-4">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Filtros</CardTitle>
+        <Button variant="ghost" size="sm" onClick={clearFilters}>
+          Limpiar
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Categories */}
+        <div>
+          <h3 className="font-medium mb-3">Categoría</h3>
+          <div className="space-y-2">
+            {categories.map((category) => (
+              <div key={category.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={category.id}
+                  checked={filters.category === category.id}
+                  onCheckedChange={() => handleCategoryChange(category.id)}
+                />
+                <Label htmlFor={category.id} className="text-sm">
+                  {category.label}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Price Range */}
+        <div>
+          <h3 className="font-medium mb-3">Rango de Precio</h3>
+          <div className="px-2">
+            <Slider
+              value={filters.priceRange}
+              onValueChange={handlePriceChange}
+              max={100000}
+              min={0}
+              step={1000}
+              className="mb-4"
+            />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>${filters.priceRange[0].toLocaleString()}</span>
+              <span>${filters.priceRange[1].toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Sizes */}
+        <div>
+          <h3 className="font-medium mb-3">Tallas</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {sizes.map((size) => (
+              <div key={size} className="flex items-center space-x-2">
+                <Checkbox
+                  id={size}
+                  checked={filters.sizes.includes(size)}
+                  onCheckedChange={(checked) => handleSizeChange(size, checked as boolean)}
+                />
+                <Label htmlFor={size} className="text-sm">
+                  {size}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
