@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Tipo de cada producto en el carrito (puedes ajustarlo según tu modelo)
 export type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
+  id: string
+  name: string
+  price: number
+  originalPrice?: number
+  quantity: number
+  image: string
+  category: string
+  isNew?: boolean
+  isSale?: boolean
 };
 
 // Tipo del contexto: qué datos y funciones expondrá

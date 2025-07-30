@@ -76,7 +76,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Quick Add to Cart */}
           <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button className="w-full bg-white text-black hover:bg-gray-100" onClick={handleAddToCart}>
+            <Button className="w-full bg-white text-black hover:bg-gray-100, z-10" onClick={handleAddToCart}>
               <ShoppingCart className="w-4 h-4 mr-2" />
               Agregar al carrito
             </Button>
