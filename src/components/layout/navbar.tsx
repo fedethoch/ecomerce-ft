@@ -9,10 +9,13 @@ import { ShoppingCart, User, Menu, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/context/cart-context";
 import Cart from "@/components/cart/Cart";
+import { useRouter } from "next/navigation"
+
+
 
 
 export function Navbar() {
-  
+  const router = useRouter();
   const { cart, setIsOpen, isOpen } = useCart();
   const [cartItems] = useState(cart.length) 
   
@@ -61,7 +64,7 @@ export function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="hidden md:flex" >
+            <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => router.push("/register")}>
               <User className="h-5 w-5" /> 
             </Button>
             <Button variant="ghost" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
@@ -91,7 +94,7 @@ export function Navbar() {
                     Accesorios
                   </Link>
                   <div className="pt-4 border-t">
-                    <Button className="w-full mb-2">
+                    <Button className="w-full mb-2" >
                       <User className="w-4 h-4 mr-2" />
                       Mi Cuenta
                     </Button>

@@ -1,22 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-
+import { ProductType } from "@/types/products/products"
 // Tipo de cada producto en el carrito (puedes ajustarlo según tu modelo)
-export type CartItem = {
-  id: string
-  name: string
-  price: number
-  originalPrice?: number
-  quantity: number
-  image: string
-  category: string
-  isNew?: boolean
-  isSale?: boolean
-};
+
 
 // Tipo del contexto: qué datos y funciones expondrá
 export type CartContextType = {
-  cart: CartItem[];
-  addItem: (item: CartItem) => void;
+  cart: ProductType[];
+  addItem: (item: ProductType) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;

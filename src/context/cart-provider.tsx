@@ -1,12 +1,12 @@
 "use client"
 
+import { ProductType } from "@/types/products/products"
 import React, { useState, useEffect } from "react";
-import { CartItem } from "./cart-context";
 import { CartContext } from "./cart-context";
 
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<ProductType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   // Cargar carrito desde localStorage al iniciar
   useEffect(() => {
@@ -20,7 +20,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }, [cart]);
 
   // Funciones del carrito
-  const addItem = (item: CartItem) => {
+  const addItem = (item: ProductType) => {
     setCart((prev) => {
       const exists = prev.find((p) => p.id === item.id);
       if (exists) {

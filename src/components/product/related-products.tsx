@@ -1,20 +1,21 @@
 import { ProductCard } from "@/components/ui/product-card"
-import { mockProducts } from "@/lib/mock-data"
+import { ProductType } from "@/types/products/products" // Asegúrate de tener definido el tipo Product
+import { createClient } from "@supabase/supabase-js"
+
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
 interface RelatedProductsProps {
-  currentProduct: {
-    id: string
-    category: string
-  }
+  currentProductId: string
+  category: string
 }
 
-export function RelatedProducts({ currentProduct }: RelatedProductsProps) {
-  // Get related products from the same category, excluding current product
-  const relatedProducts = mockProducts
-    .filter((product) => product.category === currentProduct.category && product.id !== currentProduct.id)
-    .slice(0, 4)
+export async function RelatedProducts({ currentProductId, category }: RelatedProductsProps) {
+  // Obtener productos relacionados desde Supabase
+  const relatedProducts = await getRelatedProducts(category, currentProductId, 4)
 
-  if (relatedProducts.length === 0) {
+  if (!relatedProducts || relatedProducts.length === 0) {
     return null
   }
 
@@ -38,4 +39,28 @@ export function RelatedProducts({ currentProduct }: RelatedProductsProps) {
       </div>
     </section>
   )
+}
+
+// Función para obtener productos relacionados desde Supabase
+async function getRelatedProducts(category: string, excludeId: string, limit = 4) {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey); // Importa tu cliente Supabase
+    
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("category", category)
+      .neq("id", excludeId)
+      .limit(limit);
+
+    if (error) {
+      console.error("Error fetching related products:", error.message);
+      return [];
+    }
+
+    return products;
+  } catch (error) {
+    console.error("Error in getRelatedProducts:", error);
+    return [];
+  }
 }

@@ -10,8 +10,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { mockProducts } from "@/lib/mock-data"
 import { notFound } from "next/navigation"
+import { getProductById, getRelatedProducts, getAllProductIds } from "@/lib/supabase/product-actions"
 
 interface ProductPageProps {
   params: {
@@ -19,14 +19,17 @@ interface ProductPageProps {
   }
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = mockProducts.find((p) => p.id === params.id)
+export default async function ProductPage({ params }: ProductPageProps) {
+  const product = await getProductById(params.id);
 
   if (!product) {
     notFound()
   }
 
-  // Mock additional product data
+  // Obtener productos relacionados
+  const relatedProducts = await getRelatedProducts(product.category, product.id);
+
+  // Mock de datos adicionales que podrías querer almacenar en Supabase después
   const productDetails = {
     ...product,
     images: [
@@ -118,14 +121,23 @@ export default function ProductPage({ params }: ProductPageProps) {
         <ProductTabs product={productDetails} />
 
         {/* Related Products */}
-        <RelatedProducts currentProduct={product} />
+        <RelatedProducts
+          currentProductId={product.id} 
+          category={product.category}  />
       </div>
     </div>
   )
 }
 
 export async function generateStaticParams() {
-  return mockProducts.map((product) => ({
-    id: product.id,
-  }))
+  try {
+    // Obtener todos los IDs de productos desde Supabase
+    const products = await getAllProductIds();
+    return products.map((product) => ({
+      id: product.id,
+    }))
+  } catch (error) {
+    console.error("Error generando rutas estáticas:", error);
+    return [];
+  }
 }

@@ -1,10 +1,10 @@
 import { ProductCard } from "@/components/ui/product-card"
 import { Button } from "@/components/ui/button"
-import { mockProducts } from "@/lib/mock-data"
+
 import Link from "next/link"
 
 export function FeaturedProducts() {
-  const featuredProducts = mockProducts.slice(0, 8)
+   // const featuredProducts = mockProducts.slice(0, 8)
 
   return (
     <section className="py-16 bg-background">
@@ -16,8 +16,8 @@ export function FeaturedProducts() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {featuredProducts.map((product, index) => (
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+           {featuredProducts.map((product, index) => (
             <div
               key={product.id}
               className="animate-in fade-in slide-in-from-bottom-4"
@@ -26,7 +26,7 @@ export function FeaturedProducts() {
               <ProductCard product={product} />
             </div>
           ))}
-        </div>
+        </div> */}
 
         <div className="text-center">
           <Button asChild size="lg" variant="outline">

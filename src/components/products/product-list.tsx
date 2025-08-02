@@ -1,18 +1,9 @@
 import { ProductCard } from "@/components/ui/product-card"
 
-interface Product {
-  id: string
-  name: string
-  price: number
-  originalPrice?: number
-  image: string
-  category: string
-  isNew?: boolean
-  isSale?: boolean
-}
+import { ProductType } from "@/types/products/products"
 
 interface ProductListProps {
-  products: Product[]
+  products: ProductType[]
 }
 
 export function ProductList({ products }: ProductListProps) {
