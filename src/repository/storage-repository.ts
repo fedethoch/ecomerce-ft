@@ -14,7 +14,9 @@ import {
 
 export class StorageRepository {
   async uploadFile(params: UploadFileParams): Promise<UploadResult> {
+    
     const supabase = await createClient()
+    
     const { file, productId, filename, bucket, options } = params;
     ;
 
@@ -77,6 +79,7 @@ export class StorageRepository {
   }
 
   async deleteFile(params: DeleteFileParams): Promise<void> {
+    
     const supabase = await createClient()
     const { path, bucket } = params
 

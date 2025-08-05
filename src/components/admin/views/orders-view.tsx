@@ -1,23 +1,28 @@
 "use client"
 
-import { Eye, Edit, MoreHorizontal } from "lucide-react"
+import { Eye, Edit, MoreHorizontal, Loader2 } from "lucide-react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { SearchFilterBar } from "@/components/search-filter-bar"
+import { SearchFilterBar } from "../search-filter-bar"
 import { useOrders } from "@/hooks/use-orders"
-import { getOrderStatusBadgeVariant } from "@/lib/database"
+import { getOrderStatusBadgeVariant } from "@/lib/helpers/order-helpers"
 
 export function OrdersView() {
   const { orders, loading, error, updateStatus } = useOrders()
+  const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>({})
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
+      setUpdatingOrders(prev => ({ ...prev, [orderId]: true }))
       await updateStatus(orderId, newStatus)
     } catch (err) {
       console.error("Error al actualizar estado:", err)
+    } finally {
+      setUpdatingOrders(prev => ({ ...prev, [orderId]: false }))
     }
   }
 
@@ -85,7 +90,11 @@ export function OrdersView() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                          {updatingOrders[order.id] ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -93,17 +102,26 @@ export function OrdersView() {
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalles
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "Procesando")}>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusUpdate(order.id, "Procesando")}
+                          disabled={updatingOrders[order.id]}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
-                          Marcar como Procesando
+                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Procesando"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "Enviado")}>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusUpdate(order.id, "Enviado")}
+                          disabled={updatingOrders[order.id]}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
-                          Marcar como Enviado
+                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Enviado"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "Completado")}>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusUpdate(order.id, "Completado")}
+                          disabled={updatingOrders[order.id]}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
-                          Marcar como Completado
+                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Completado"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

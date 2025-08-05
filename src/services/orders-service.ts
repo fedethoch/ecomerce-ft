@@ -12,7 +12,7 @@ export class OrdersService {
     return this.repository.getOrder(id)
   }
 
-  async updateOrderStatus(id: string, status: string) {
-    return this.repository.updateOrderStatus(id, status)
+  async updateOrderStatus(id: string, status: string): Promise<OrderWithDetails> {
+    return this.repository.updateOrderStatus(id, status) as Promise<OrderWithDetails>
   }
 }

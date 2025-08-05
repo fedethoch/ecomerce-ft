@@ -1,11 +1,21 @@
-import { createClient } from "@/lib/supabase/client"
-import { Order, OrderWithDetails } from "@/types/orders/types"
+import { createClient } from "@/lib/supabase/server"
+import { OrderWithDetails } from "@/types/orders/types"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 export class OrdersRepository {
-  private supabase = createClient()
+  private supabase: SupabaseClient | null = null;
 
-  async getOrders() {
-    const { data, error } = await this.supabase
+  private async getSupabase() {
+    if (!this.supabase) {
+      this.supabase = await createClient();
+    }
+    return this.supabase;
+  }
+
+  async getOrders(): Promise<OrderWithDetails[]> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
       .from("orders")
       .select(`
         *,
@@ -17,12 +27,14 @@ export class OrdersRepository {
       `)
       .order("created_at", { ascending: false })
 
-    if (error) throw error
-    return data as OrderWithDetails[]
+    if (error) throw error;
+    return data as OrderWithDetails[];
   }
 
-  async getOrder(id: string) {
-    const { data, error } = await this.supabase
+  async getOrder(id: string): Promise<OrderWithDetails> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
       .from("orders")
       .select(`
         *,
@@ -35,19 +47,28 @@ export class OrdersRepository {
       .eq("id", id)
       .single()
 
-    if (error) throw error
-    return data as OrderWithDetails
+    if (error) throw error;
+    return data as OrderWithDetails;
   }
 
-  async updateOrderStatus(id: string, status: string) {
-    const { data, error } = await this.supabase
+  async updateOrderStatus(id: string, status: string): Promise<OrderWithDetails> {
+    const supabase = await this.getSupabase();
+    
+    const { data, error } = await supabase
       .from("orders")
       .update({ status })
       .eq("id", id)
-      .select()
+      .select(`
+        *,
+        user:users(*),
+        order_items(
+          *,
+          product:products(*)
+        )
+      `)
       .single()
 
-    if (error) throw error
-    return data as Order
+    if (error) throw error;
+    return data as OrderWithDetails;
   }
 }

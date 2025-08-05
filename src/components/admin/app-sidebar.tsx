@@ -1,7 +1,17 @@
 "use client"
 
-import { BarChart3, Home, Package, ShoppingCart, Users, Settings, User, LogOut } from "lucide-react"
-
+import {
+  BarChart3,
+  Home,
+  Package,
+  ShoppingCart,
+  Users,
+  Settings,
+  User,
+  LogOut,
+  PanelLeft,
+  PanelLeftClose,
+} from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -10,18 +20,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 const navigationItems = [
   {
@@ -59,53 +60,129 @@ const navigationItems = [
 interface AppSidebarProps {
   activeView: string
   setActiveView: (view: string) => void
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
 }
 
-export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
+export function AppSidebar({ activeView, setActiveView, sidebarOpen, setSidebarOpen }: AppSidebarProps) {
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Package className="h-4 w-4" />
+    <TooltipProvider delayDuration={0}>
+      <div
+        className={cn(
+          "fixed left-0 bg-background border-r z-40 transition-all duration-300 ease-in-out",
+          "h-[calc(100vh-64px)] top-16",
+          sidebarOpen ? "w-64" : "w-16",
+        )}
+      >
+        {/* Header del sidebar con botón toggle */}
+        <div className="flex items-center justify-between p-4 border-b h-[73px]">
+          {/* Contenedor del logo y texto - se colapsa para centrar el botón */}
+          <div
+            className={cn(
+              "flex items-center gap-3 transition-all duration-200 overflow-hidden",
+              sidebarOpen ? "flex-1 opacity-100" : "w-0 opacity-0", // flex-1 cuando abierto, w-0 cuando cerrado
+            )}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Package className="h-4 w-4" />
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-semibold">Admin Panel</span>
+              <span className="truncate text-xs text-muted-foreground">Fashion Store</span>
+            </div>
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Fashion Store</span>
-            <span className="truncate text-xs text-muted-foreground">Admin Panel</span>
-          </div>
+
+          {/* Botón toggle con iconos animados */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="h-10 w-10 hover:bg-accent shrink-0"
+              >
+                <div className="relative h-4 w-4">
+                  <PanelLeft
+                    className={cn(
+                      "absolute inset-0 transition-all duration-300",
+                      sidebarOpen ? "rotate-0 opacity-100" : "rotate-180 opacity-0",
+                    )}
+                  />
+                  <PanelLeftClose
+                    className={cn(
+                      "absolute inset-0 transition-all duration-300",
+                      sidebarOpen ? "rotate-180 opacity-0" : "rotate-0 opacity-100",
+                    )}
+                  />
+                </div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{sidebarOpen ? "Colapsar sidebar" : "Expandir sidebar"}</TooltipContent>
+          </Tooltip>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+
+        {/* Contenido del sidebar */}
+        <div className="flex flex-col h-[calc(100%-5rem)]">
+          {/* Navegación */}
+          <div className="flex-1 p-4">
+            <div className="space-y-1">
+              {sidebarOpen && <p className="text-xs font-medium text-muted-foreground mb-2">Navegación</p>}
               {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton onClick={() => setActiveView(item.id)} isActive={activeView === item.id}>
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeView === item.id ? "secondary" : "ghost"}
+                      className={cn(
+                        "h-10 transition-all duration-200",
+                        sidebarOpen ? "w-full justify-start gap-3" : "w-10 justify-center p-0",
+                        activeView === item.id && "bg-accent text-accent-foreground",
+                      )}
+                      onClick={() => {
+                        setActiveView(item.id)
+                        if (window.innerWidth < 1024 && !sidebarOpen) {
+                          setSidebarOpen(true)
+                        }
+                      }}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      {sidebarOpen && <span className="truncate">{item.title}</span>}
+                    </Button>
+                  </TooltipTrigger>
+                  {!sidebarOpen && <TooltipContent side="right">{item.title}</TooltipContent>}
+                </Tooltip>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
+            </div>
+          </div>
+
+          {/* Footer con usuario */}
+          <div className="p-4 border-t">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg?height=24&width=24" />
-                    <AvatarFallback>AD</AvatarFallback>
-                  </Avatar>
-                  <span>Admin</span>
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" className="w-(--radix-popper-anchor-width)">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "transition-all duration-200 hover:bg-accent",
+                        sidebarOpen ? "w-full justify-start gap-3 h-12" : "w-10 h-10 justify-center p-0",
+                      )}
+                    >
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Admin" />
+                        <AvatarFallback>AD</AvatarFallback>
+                      </Avatar>
+                      {sidebarOpen && (
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-semibold">Admin</span>
+                          <span className="truncate text-xs text-muted-foreground">admin@fashionstore.com</span>
+                        </div>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                {!sidebarOpen && <TooltipContent side="right">Admin</TooltipContent>}
+              </Tooltip>
+              <DropdownMenuContent className="w-56" side="top" align="end" sideOffset={4}>
                 <DropdownMenuItem>
                   <User className="h-4 w-4 mr-2" />
                   Perfil
@@ -115,15 +192,15 @@ export function AppSidebar({ activeView, setActiveView }: AppSidebarProps) {
                   Configuración
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">
                   <LogOut className="h-4 w-4 mr-2" />
                   Cerrar Sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+          </div>
+        </div>
+      </div>
+    </TooltipProvider>
   )
 }

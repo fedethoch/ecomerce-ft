@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getProducts, createProduct, updateProduct, deleteProduct } from "@/controllers/products-controller"
+import { getProducts, createProduct, updateProduct, deleteProduct, getProduct as getProductController } from "@/controllers/products-controller"
 import type { ProductType } from "@/types/products/products"
 import { AppActionError } from "@/types/types"
 
@@ -34,10 +34,36 @@ export function useProducts() {
     }
   }
 
-  const addProduct = async (productData: Omit<ProductType, "id">) => {
+  // Nueva función para obtener un solo producto
+  const getProduct = async (id: string): Promise<ProductType | null> => {
     try {
-      // Aquí el createProduct necesita el file, ajusta según tu caso
-      const newProduct = await createProduct(productData as any, {} as File)
+      setLoading(true)
+      const data = await getProductController(id)
+
+      if (isAppActionError(data)) {
+        setError(data.userMessage || data.message)
+        return null
+      }
+
+      return data
+    } catch (err) {
+      setError("Error al cargar el producto")
+      console.error(err)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addProduct = async (productData: Omit<ProductType, "id" | "image">, imageFile: File) => {
+    try {
+
+      console.log("Datos del producto:", productData);
+      console.log("Archivo de imagen:", imageFile);
+      
+      const newProduct = await createProduct(productData, imageFile)
+
+      console.log("Producto creado:", newProduct);
 
       if (isAppActionError(newProduct)) {
         setError(newProduct.userMessage || newProduct.message)
@@ -47,6 +73,7 @@ export function useProducts() {
       setProducts((prev) => [...prev, newProduct])
       return newProduct
     } catch (err) {
+      console.error("Error detallado:", err);
       setError("Error al crear producto")
       throw err
     }
@@ -96,5 +123,6 @@ export function useProducts() {
     addProduct,
     editProduct,
     removeProduct,
+    getProduct, // Nueva función añadida
   }
 }

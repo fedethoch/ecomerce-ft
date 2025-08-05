@@ -21,7 +21,6 @@ export class StorageService {
 
 
   private validateImageFile(file: Blob): void {
-    // Validar tipo de archivo
     if (file.type && !file.type.startsWith("image/")) {
       throw new InvalidFileTypeException(
         `Invalid file type: ${file.type}`,
@@ -29,8 +28,7 @@ export class StorageService {
       )
     }
 
-    // Validar tamaño (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
       throw new FileSizeExceededException(
         `File size ${file.size} exceeds maximum ${maxSize}`,

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export async function getProductById(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient(); // Añade await aquí
   
   const { data: product, error } = await supabase
     .from("products")
@@ -17,7 +17,7 @@ export async function getProductById(id: string) {
 }
 
 export async function getAllProductIds() {
-  const supabase = createClient();
+  const supabase = await createClient(); // Añade await aquí
   
   const { data: products, error } = await supabase
     .from("products")
@@ -31,7 +31,7 @@ export async function getAllProductIds() {
 }
 
 export async function getRelatedProducts(category: string, currentId: string, limit = 4) {
-  const supabase = createClient();
+  const supabase = await createClient(); // Añade await aquí
   
   const { data: products, error } = await supabase
     .from("products")

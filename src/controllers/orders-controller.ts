@@ -1,3 +1,5 @@
+"use server";
+
 import { OrdersService } from "@/services/orders-service"
 import { actionHandler } from "@/lib/handlers/actionHandler"
 import { OrderWithDetails } from "@/types/orders/types"

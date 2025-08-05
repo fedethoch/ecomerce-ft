@@ -9,6 +9,7 @@ import { ProductType } from "@/types/products/products"
 import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler"
 import { AppActionException } from "@/types/exceptions"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AppActionError } from "@/types/types"
 
 export default function ProductsPage() {
   const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([])
@@ -24,32 +25,46 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        const data = await actionErrorHandler(async() => { 
-          const res = await getProducts()
-          return res
-        })
+        const data = await getProducts();
         
-        if (data) {
-          setProducts(data)
-          setFilteredProducts(data)
+        // Manejar respuesta de error
+        if (data && 'statusCode' in data) {
+          const errorData = data as AppActionError;
+          throw new AppActionException(
+            errorData.statusCode || 500, // Añadido statusCode
+            errorData.message || "Error desconocido",
+            errorData.userMessage || "Ocurrió un error al cargar los productos"
+          );
+        }
+        
+        // Manejar respuesta exitosa
+        if (Array.isArray(data)) {
+          setProducts(data);
+          setFilteredProducts(data);
+        } else {
+          throw new Error("La respuesta no es un array de productos");
         }
       } catch (error) {
-        console.error("Error fetching products:", error)
+        console.error("Error fetching products:", error);
+        
         if (error instanceof AppActionException) {
-          setError(error.userMessage || "Error al cargar productos")
+          setError(error.userMessage || "Ocurrió un error al cargar los productos");
+        } else if (error instanceof Error) {
+          setError(error.message);
         } else {
-          setError("Ocurrió un error al cargar los productos")
+          setError("Ocurrió un error desconocido al cargar los productos");
         }
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchProducts()
-  }, [])
+    fetchProducts();
+  }, []);
 
   const handleFilterChange = (filters: any) => {
     let filtered = [...products] // Copia para no mutar el estado original

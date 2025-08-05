@@ -9,7 +9,7 @@ export type ProductType = {
   isSale?: boolean
   sizes: string[]
   image: string[]
-  
+  description: string
 };
 
 export type ProductStatus = "Activo" | "Bajo Stock" | "Agotado"
