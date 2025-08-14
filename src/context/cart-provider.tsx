@@ -8,10 +8,13 @@ import { CartContext } from "./cart-context";
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<ProductType[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isCartReady, setIsCartReady] = useState(false); // NUEVO
+
   // Cargar carrito desde localStorage al iniciar
   useEffect(() => {
     const savedCart = localStorage.getItem("cart");
     if (savedCart) setCart(JSON.parse(savedCart));
+    setIsCartReady(true); // Marcar como listo después de leer
   }, []);
 
   // Guardar carrito en localStorage cada vez que cambie
@@ -48,11 +51,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <CartContext.Provider
-      value={{ cart, addItem, removeItem, updateQuantity, clearCart, isOpen, setIsOpen }}
+      value={{ cart, addItem, removeItem, updateQuantity, clearCart, isOpen, setIsOpen, isCartReady }}
     >
       {children}
     </CartContext.Provider>
   );
 };
 
-  

@@ -12,6 +12,15 @@ import {
 } from "@/components/ui/breadcrumb"
 import { notFound } from "next/navigation"
 import { getProductById, getRelatedProducts, getAllProductIds } from "@/lib/supabase/product-actions"
+import { getAllProductIdsSSG } from "@/lib/supabase/product-actions";
+import { getProduct } from "@/controllers/products-controller"
+import { AppActionError } from "@/types/types"
+import { ProductType } from "@/types/products/products"
+
+// Type guard para saber si es ProductType
+function isProductType(obj: any): obj is ProductType {
+  return obj && typeof obj === "object" && Array.isArray(obj.imagePaths);
+}
 
 interface ProductPageProps {
   params: {
@@ -20,24 +29,22 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProductById(params.id);
+  const resolvedParams = await params;
+  const product = await getProduct(resolvedParams.id);
 
-  if (!product) {
-    notFound()
+  // Si es error o no existe, notFound
+  if (!product || !isProductType(product)) {
+    notFound();
   }
 
+  const images = product.imagePaths; 
   // Obtener productos relacionados
   const relatedProducts = await getRelatedProducts(product.category, product.id);
 
   // Mock de datos adicionales que podrías querer almacenar en Supabase después
   const productDetails = {
     ...product,
-    images: [
-      product.image,
-      "/placeholder.svg?height=600&width=600&text=Vista+2",
-      "/placeholder.svg?height=600&width=600&text=Vista+3",
-      "/placeholder.svg?height=600&width=600&text=Vista+4",
-    ],
+    images,
     features: [
       "Material de alta calidad",
       "Diseño moderno y versátil",
@@ -132,7 +139,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 export async function generateStaticParams() {
   try {
     // Obtener todos los IDs de productos desde Supabase
-    const products = await getAllProductIds();
+    const products = await getAllProductIdsSSG();
     return products.map((product) => ({
       id: product.id,
     }))

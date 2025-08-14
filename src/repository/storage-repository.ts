@@ -14,74 +14,68 @@ import {
 
 export class StorageRepository {
   async uploadFile(params: UploadFileParams): Promise<UploadResult> {
-    
-    const supabase = await createClient()
-    
-    const { file, productId, filename, bucket, options } = params;
-    ;
+  const supabase = await createClient();
+  
+  const { file, bucket, path, filename, productId, options } = params; // Usamos path directamente
 
-    try {
-      const finalFilename =
-        filename || (file instanceof File ? file.name : `file-${Date.now()}`)
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-      const arrayBuffer = await file.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
+    // 1. Subir el archivo
+    const { data, error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, buffer, {
+        contentType: options?.contentType || file.type,
+        upsert: options?.upsert || true,
+        cacheControl: options?.cacheControl || '3600'
+      });
 
-      const storagePath = `products/${productId || "general"}/${finalFilename}`
-
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(storagePath, buffer, {
-          contentType: options?.contentType || file.type,
-          upsert: options?.upsert || false,
-        })
-
-      if (error) {
-        throw new FileUploadException(
-          error.message,
-          "Error al subir el archivo al almacenamiento"
-        )
-      }
-
-      if (!data) {
-        throw new FileUploadException(
-          "No data returned from upload",
-          "Error al subir el archivo: no se recibieron datos"
-        )
-      }
-
-      const { data: publicUrl } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(data.path, 60 * 60 * 24 * 30)
-
-      if (!publicUrl?.signedUrl) {
-        throw new FileUploadException(
-          "No signed URL returned from createSignedUrl",
-          "Error al obtener la URL firmada del archivo"
-        )
-      }
-
-      return {
-        productId,
-        filename: finalFilename,
-        path: data.path,
-        url: publicUrl.signedUrl,
-      }
-    } catch (error) {
-      if (error instanceof FileUploadException) {
-        throw error
-      }
-      throw new StorageException(
-        `Storage upload error: ${error}`,
-        "Error en el sistema de almacenamiento"
-      )
+    if (uploadError) {
+      throw new FileUploadException(
+        uploadError.message,
+        "Error al subir el archivo"
+      );
     }
+
+    // 2. Verificar que data existe
+    if (!data) {
+      throw new FileUploadException(
+        "Upload data is missing",
+        "Error crítico: No se recibió información del archivo subido"
+      );
+    }
+
+    // 3. Obtener URL pública (no firmada)
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(data.path);
+
+    if (!publicUrlData?.publicUrl) {
+      throw new FileUploadException(
+        "Public URL generation failed",
+        "Error al generar la URL pública"
+      );
+    }
+
+    return {
+      path: data.path,
+      url: publicUrlData.publicUrl
+    };
+    
+  } catch (error) {
+    if (error instanceof FileUploadException) throw error;
+    throw new StorageException(
+      `Error inesperado: ${error instanceof Error ? error.message : String(error)}`,
+      "Error crítico en el sistema de almacenamiento"
+    );
   }
+}
 
   async deleteFile(params: DeleteFileParams): Promise<void> {
     
     const supabase = await createClient()
-    const { path, bucket } = params
+    const { path, bucket, } = params
 
     try {
       const { error } = await supabase.storage.from(bucket).remove([path])
@@ -135,27 +129,34 @@ export class StorageRepository {
     files: File[],
     productId: string,
     bucket: string,
-    options?: { contentType?: string; upsert?: boolean }
+    path: string, // Requerido ahora va ANTES de opcionales
+    filename: string,
+    options?: { contentType?: string; upsert?: true }
   ): Promise<UploadResult[]> {
     const uploadPromises = files.map((file, index) => {
-      const filename = file instanceof File ? file.name : `img-${Date.now()}-${index}`;
-
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+      const filename = file.name
+        ? `${uniqueSuffix}-${file.name}`
+        : `img-${uniqueSuffix}-${index}`;
+      console.log("Intentando subir archivo:", filename);
       return this.uploadFile({
         file,
+        bucket,
+        path: `${path}/${filename}`, // Usa la ruta base + nombre de archivo
         productId,
         filename,
-        bucket,
-        options,
-      })
-    })
+        options
+      });
+    });
 
     try {
       return await Promise.all(uploadPromises);
     } catch (error) {
+      console.error(`Error subiendo archivo ${filename}:`, error);
       throw new FileUploadException(
-        `Multiple upload error: ${error}`,
+        `Multiple upload error: ${error instanceof Error ? error.message : String(error)}`,
         "Error al subir uno o más archivos"
-      )
+      );
     }
   }
 
@@ -176,7 +177,7 @@ export class StorageRepository {
     }
 
     const { data: publicUrl } = supabase.storage
-      .from("courses-images")
+      .from("products-images")
       .getPublicUrl(data.path)
 
     return publicUrl.publicUrl

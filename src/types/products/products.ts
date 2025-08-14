@@ -8,8 +8,8 @@ export type ProductType = {
   isNew?: boolean
   isSale?: boolean
   sizes: string[]
-  image: string[]
   description: string
+  imagePaths: string[] 
 };
 
 export type ProductStatus = "Activo" | "Bajo Stock" | "Agotado"

@@ -24,9 +24,9 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
             <tr key={product.id}>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
-                  {product.image && product.image.length > 0 && (
+                  {product.imagePaths && product.imagePaths.length > 0 && (
                     <img 
-                      src={product.image[0]} 
+                      src={product.imagePaths[0]} 
                       alt={product.name} 
                       className="w-10 h-10 rounded-full mr-3 object-cover"
                     />

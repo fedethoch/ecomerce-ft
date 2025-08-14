@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProducts } from "@/hooks/use-products"
+import { useRef } from "react"
 import type { ProductType } from "@/types/products/products"
+import { uploadProductImages } from "@/controllers/storage-controller"; // Asegúrate de importar esto
 
 interface EditProductViewProps {
   productId: string
@@ -16,101 +18,184 @@ interface EditProductViewProps {
 
 export function EditProductView({ productId, setActiveView }: EditProductViewProps) {
   const { editProduct, getProduct } = useProducts()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState<Partial<ProductType>>({
+  const [Loading, setLoading] = useState(true)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [formData, setFormData] = useState<Omit<ProductType, "id">>({
     name: "",
     price: 0,
+    originalPrice: 0,
     quantity: 0,
     category: "",
     isNew: false,
     isSale: false,
-    sizes: [] as string[],
-    image: [] as string[],
+    sizes: [],
+    imagePaths: [],
+    description: "",
   })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
+    // Validaciones
+    if (imageFiles.length === 0 && formData.imagePaths.length === 0) {
+      alert("Por favor selecciona al menos una imagen");
+      setLoading(false);
+      return;
+    }
+    if (formData.description.length < 10) {
+      alert("Descripcion minimo 10 caracteres");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Subir imágenes nuevas si hay
+      let newImageUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        // Ordenar: principal primero
+        const orderedFiles = [
+          ...imageFiles.slice(mainImageIndex - formData.imagePaths.length, mainImageIndex - formData.imagePaths.length + 1),
+          ...imageFiles.filter((_, idx) => (formData.imagePaths.length + idx) !== mainImageIndex)
+        ];
+        const filesToUpload = mainImageIndex < formData.imagePaths.length ? imageFiles : orderedFiles;
+        const uploadResult = await uploadProductImages(filesToUpload, productId);
+
+        // Manejo de error
+        if (typeof uploadResult === "object" && "statusCode" in uploadResult) {
+          alert(uploadResult.userMessage || uploadResult.message || "Error al subir imágenes");
+          setLoading(false);
+          return;
+        }
+
+        newImageUrls = uploadResult;
+      }
+
+      // 2. Combinar imágenes existentes y nuevas (principal primero)
+      let allImagePaths: string[] = [];
+      if (mainImageIndex < formData.imagePaths.length) {
+        // Principal es una imagen existente
+        allImagePaths = [
+          formData.imagePaths[mainImageIndex],
+          ...formData.imagePaths.filter((_, idx) => idx !== mainImageIndex),
+          ...newImageUrls
+        ];
+      } else {
+        // Principal es una imagen nueva
+        allImagePaths = [
+          ...formData.imagePaths,
+          ...newImageUrls
+        ];
+        // Mover la imagen principal nueva al inicio de las nuevas
+        const mainNewIdx = mainImageIndex - formData.imagePaths.length;
+        if (mainNewIdx > 0 && newImageUrls.length > 0) {
+          const [main, ...rest] = newImageUrls;
+          allImagePaths = [
+            ...formData.imagePaths,
+            main,
+            ...rest
+          ];
+        }
+      }
+
+      // 3. Preparar datos para actualizar
+      const productData = {
+        name: formData.name ?? "",
+        price: formData.price ?? 0,
+        original_price: formData.originalPrice ?? 0,
+        quantity: formData.quantity ?? 0,
+        category: formData.category ?? "",
+        is_new: formData.isNew ?? false,
+        is_sale: formData.isSale ?? false,
+        sizes: formData.sizes ?? [],
+        image_paths: allImagePaths,
+        description: formData.description ?? ""
+      };
+
+      // 4. Llamar a la función de edición
+      const result = await editProduct(productId, productData);
+      console.log("Resultado de editProduct:", result);
+
+      if (result) {
+        setActiveView("products");
+      } else {
+        alert("No se pudo actualizar el producto");
+      }
+    } catch (error: any) {
+      console.error("Error detallado al actualizar producto:", error);
+      alert(`Error al actualizar producto: ${error.message || "Error desconocido"}`);
+    } finally {
+      setLoading(false);
+    }
+  }
   // Cargar el producto cuando el componente se monte
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        setIsLoading(true)
-        const productData = await getProduct(productId)
+        setLoading(true)
+        const productData: any = await getProduct(productId)
         if (productData) {
           setFormData({
-            ...productData,
-            isNew: productData.isNew ?? false,
-            isSale: productData.isSale ?? false,
-            image: productData.image || []
+            name: productData.name ?? "",
+            price: productData.price ?? 0,
+            originalPrice: productData.original_price ?? 0,
+            quantity: productData.quantity ?? 0,
+            category: productData.category ?? "",
+            isNew: productData.is_new ?? false,
+            isSale: productData.is_sale ?? false,
+            sizes: productData.sizes ?? [],
+            imagePaths: productData.image_paths ?? [],
+            description: productData.description ?? "",
           })
         }
       } catch (err) {
         console.error("Error al cargar el producto:", err)
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
     fetchProduct()
   }, [productId])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
 
-    try {
-      // Preparar los datos del producto
-      const productData: Partial<ProductType> = {
-        name: formData.name || "",
-        price: formData.price || 0,
-        originalPrice: formData.originalPrice,
-        quantity: formData.quantity || 0,
-        category: formData.category || "",
-        isNew: formData.isNew || false,
-        isSale: formData.isSale || false,
-        sizes: formData.sizes || [],
-        image: formData.image || []
-      }
-      
-      await editProduct(productId, productData)
-      setActiveView("products")
-    } catch (error) {
-      console.error("Error al actualizar producto:", error)
-    } finally {
-      setIsSubmitting(false)
+
+  const toggleSize = (size: string) => {
+    setFormData(prev => {
+      const sizes = prev.sizes ?? [];
+      return {
+        ...prev,
+        sizes: sizes.includes(size)
+          ? sizes.filter(s => s !== size)
+          : [...sizes, size]
+      };
+    });
+  };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImageFiles(Array.from(e.target.files))
+      setMainImageIndex(0) // reset principal al agregar nuevas imágenes
     }
   }
 
-  const toggleSize = (size: string) => {
-    setFormData(prev => ({
-      ...prev,
-      sizes: prev.sizes 
-        ? prev.sizes.includes(size)
-          ? prev.sizes.filter(s => s !== size)
-          : [...prev.sizes, size]
-        : [size]
-    }));
-  };
 
-  const handleImageChange = (index: number, value: string) => {
-    const newImages = [...(formData.image || [])]
-    newImages[index] = value
-    setFormData(prev => ({ ...prev, image: newImages }))
+  const handleRemoveImage = (idx: number) => {
+    setImageFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== idx)
+      // Si eliminamos la principal, la nueva principal será la 0
+      if (idx === mainImageIndex) {
+        setMainImageIndex(0)
+      } else if (idx < mainImageIndex) {
+        setMainImageIndex(mainImageIndex - 1)
+      }
+      return newFiles
+    })
   }
 
-  const addImageField = () => {
-    setFormData(prev => ({ 
-      ...prev, 
-      image: [...(prev.image || []), ""] 
-    }))
-  }
 
-  const removeImageField = (index: number) => {
-    const newImages = [...(formData.image || [])]
-    newImages.splice(index, 1)
-    setFormData(prev => ({ ...prev, image: newImages }))
-  }
-
-  if (isLoading) {
+  if (Loading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -134,7 +219,7 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Editar Producto</h1>
-          <p className="text-muted-foreground">Modifica los detalles de tu producto</p>
+          <p className="text-muted-foreground">Añade un nuevo producto a tu inventario</p>
         </div>
         <Button variant="outline" onClick={() => setActiveView("products")}>
           Volver a Productos
@@ -154,11 +239,12 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                 <Input
                   id="name"
                   placeholder="Ej: Camiseta Básica Blanca"
-                  value={formData.name || ''}
+                  value={formData.name ?? ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                 />
               </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio</Label>
@@ -167,13 +253,14 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.price || 0}
-                    onChange={(e) =>
+                    value={formData.price === 0 ? "" : formData.price}
+                    onChange={(e) => {
+                      const value = e.target.value;
                       setFormData(prev => ({ 
                         ...prev, 
-                        price: Number.parseFloat(e.target.value) || 0 
+                        price: value === "" ? 0 : Number.parseFloat(value)
                       }))
-                    }
+                    }}
                     required
                   />
                 </div>
@@ -184,15 +271,14 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.originalPrice || ''}
-                    onChange={(e) =>
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        originalPrice: e.target.value 
-                          ? Number.parseFloat(e.target.value) 
-                          : undefined
+                    value={formData.originalPrice === 0 ? "" : formData.originalPrice}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        originalPrice: value === "" ? 0 : Number.parseFloat(value)
                       }))
-                    }
+                    }}
                   />
                 </div>
               </div>
@@ -201,19 +287,37 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                 <Input
                   id="quantity"
                   type="number"
+                  step="1"
                   placeholder="0"
-                  value={formData.quantity || 0}
+                  value={formData.quantity === 0 ? "" : formData.quantity} // Muestra vacío cuando es 0
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      quantity: value === "" ? 0 : Number.parseInt(value)
+                    }))
+                  }}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción</Label>
+                <Input
+                  id="description"
+                  placeholder="Descripción del producto"
+                  value={formData.description}
                   onChange={(e) => setFormData(prev => ({ 
                     ...prev, 
-                    quantity: Number.parseInt(e.target.value) || 0 
+                    description: e.target.value 
                   }))}
+                  minLength={10}
                   required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Categoría</Label>
                 <Select
-                  value={formData.category || ''}
+                  value={formData.category ?? ""}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
                 >
                   <SelectTrigger>
@@ -229,12 +333,13 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                   </SelectContent>
                 </Select>
               </div>
+              
               <div className="flex gap-4">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id="is_new"
-                    checked={formData.isNew || false}
+                    checked={formData.isNew}
                     onChange={(e) => setFormData(prev => ({ ...prev, isNew: e.target.checked }))}
                   />
                   <Label htmlFor="is_new">Producto Nuevo</Label>
@@ -243,7 +348,7 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                   <input
                     type="checkbox"
                     id="is_sale"
-                    checked={formData.isSale || false}
+                    checked={formData.isSale}
                     onChange={(e) => setFormData(prev => ({ ...prev, isSale: e.target.checked }))}
                   />
                   <Label htmlFor="is_sale">En Oferta</Label>
@@ -255,7 +360,7 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
           <Card>
             <CardHeader>
               <CardTitle>Variantes</CardTitle>
-              <CardDescription>Configura tallas e imágenes</CardDescription>
+              <CardDescription>Configura tallas y otros detalles</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -265,7 +370,7 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
                     <Button
                       key={size}
                       type="button"
-                      variant={formData.sizes?.includes(size) ? "default" : "outline"}
+                      variant={(formData.sizes ?? []).includes(size) ? "default" : "outline"}
                       size="sm"
                       onClick={() => toggleSize(size)}
                     >
@@ -277,31 +382,123 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
               
               <div className="space-y-2">
                 <Label>Imágenes</Label>
-                <div className="space-y-3">
-                  {(formData.image || []).map((url, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        placeholder="URL de la imagen"
-                        value={url}
-                        onChange={(e) => handleImageChange(index, e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeImageField(index)}
+                <div className="flex items-start gap-3 flex-wrap flex-col">
+                  {/* Todas las imágenes (previas y nuevas) en una sola línea */}
+                  <div className="flex gap-4 flex-wrap mb-2">
+                    {/* Imágenes previas (URLs) */}
+                    {formData.imagePaths.map((url, idx) => (
+                      <div
+                        key={`prev-${url}`}
+                        className="relative group flex flex-col items-center"
+                        style={{ width: 90 }}
                       >
-                        Eliminar
-                      </Button>
-                    </div>
-                  ))}
-                  <Button 
-                    type="button" 
-                    variant="secondary"
-                    onClick={addImageField}
-                  >
-                    Añadir otra imagen
-                  </Button>
+                        <div
+                          className={`rounded-lg overflow-hidden border transition-all duration-300
+                            ${idx === mainImageIndex
+                              ? "ring-2 ring-blue-500 scale-105 shadow-lg"
+                              : "hover:ring-2 hover:ring-blue-300"}
+                          `}
+                          style={{ width: 80, height: 80, cursor: "pointer" }}
+                          onClick={() => setMainImageIndex(idx)}
+                        >
+                          <img
+                            src={url}
+                            alt={`Imagen ${idx + 1}`}
+                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                          />
+                          {idx === mainImageIndex && (
+                            <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs max-w-[80px] truncate mt-2 text-center">{`Imagen ${idx + 1}`}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              imagePaths: prev.imagePaths.filter((_, i) => i !== idx)
+                            }));
+                            if (idx === mainImageIndex) setMainImageIndex(0);
+                            else if (idx < mainImageIndex) setMainImageIndex(mainImageIndex - 1);
+                          }}
+                          className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
+                          title="Eliminar imagen"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    {/* Imágenes nuevas (Files) */}
+                    {imageFiles.map((file, idx) => {
+                      // El índice real en la lista combinada es después de las previas
+                      const realIdx = formData.imagePaths.length + idx;
+                      return (
+                        <div
+                          key={`new-${file.name}-${idx}`}
+                          className="relative group flex flex-col items-center"
+                          style={{ width: 90 }}
+                        >
+                          <div
+                            className={`rounded-lg overflow-hidden border transition-all duration-300
+                              ${realIdx === mainImageIndex
+                                ? "ring-2 ring-blue-500 scale-105 shadow-lg"
+                                : "hover:ring-2 hover:ring-blue-300"}
+                          `}
+                          style={{ width: 80, height: 80, cursor: "pointer" }}
+                          onClick={() => setMainImageIndex(realIdx)}
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                          />
+                          {realIdx === mainImageIndex && (
+                            <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs max-w-[80px] truncate mt-2 text-center">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
+                          title="Eliminar imagen"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      );
+                    })}
+                  </div>
+                  {/* Botón para seleccionar imágenes */}
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      multiple
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Seleccionar Imágenes
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Imágenes del Producto<br />
+                    Formatos: JPG, PNG, WEBP. Máx. 5MB
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -312,8 +509,8 @@ export function EditProductView({ productId, setActiveView }: EditProductViewPro
           <Button type="button" variant="outline" onClick={() => setActiveView("products")}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Actualizando..." : "Actualizar Producto"}
+          <Button type="submit" disabled={Loading}>
+            {Loading ? "Editando" : "Editar Producto"}
           </Button>
         </div>
       </form>

@@ -60,7 +60,7 @@ export default function Cart() {
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                   >
                     <Image
-                      src={item.image || "/placeholder.svg"}
+                      src={item.imagePaths?.[0] || "/placeholder.svg"}
                       alt={item.name}
                       width={60}
                       height={60}

@@ -23,16 +23,15 @@ export class ProductService {
 
 
   async createProduct(
-    values: Omit<ProductType, "id" | "image">,
-    imageFile: File
+    values: Omit<ProductType, "id" | "imagePaths">,
+    imageFiles: File[] | File
   ): Promise<ProductType> {
     try {
       console.log("Creando producto con valores:", values);
-      
       const user = await authService.getUser();
       console.log("Usuario autenticado:", user);
 
-      if (!user) {
+      if (!user || user.type_role !== "admin") {
         throw new ProductCreationException(
           "No se pudo obtener el usuario.",
           "Debe estar autenticado para crear un producto."
@@ -41,17 +40,17 @@ export class ProductService {
 
       console.log("Subiendo imagen...");
       const uploadResult = await storageService.uploadProductImage(
-        imageFile, 
+        imageFiles,
         values.name
       );
-      console.log("Imagen subida:", uploadResult.url);
+      const imageUrls = uploadResult.map(res => res.url);
 
       console.log("Creando producto en DB...");
       const createdProduct = await this.productsRepository.createProduct({
         ...values,
-        image: [uploadResult.url],
+        imagePaths: imageUrls
       });
-      
+
       console.log("Producto creado en DB:", createdProduct);
       return createdProduct;
     } catch (error) {
@@ -81,7 +80,7 @@ export class ProductService {
       );
     }
 
-    if (user.role !== "admin") {
+    if (user.type_role !== "admin") {
       throw new UnauthorizedProductAccessException(
         "No tiene permisos para ver todos los productos.",
         "Debe ser administrador para ver todos los productos."

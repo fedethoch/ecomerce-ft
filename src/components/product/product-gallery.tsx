@@ -11,23 +11,29 @@ interface ProductGalleryProps {
   productName: string
 }
 
-export function ProductGallery({ images, productName }: ProductGalleryProps) {
+export function ProductGallery({ images = [], productName }: ProductGalleryProps) {
+  // Mostrar la primera imagen por defecto si existe
   const [currentImage, setCurrentImage] = useState(0)
 
   const nextImage = () => {
+    if (!images.length) return
     setCurrentImage((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = () => {
+    if (!images.length) return
     setCurrentImage((prev) => (prev - 1 + images.length) % images.length)
   }
+
+  // Si no hay imágenes, usar placeholder
+  const mainImage = images.length > 0 ? images[currentImage] : "/placeholder.svg"
 
   return (
     <div className="space-y-4">
       {/* Main Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-muted group">
         <Image
-          src={images[currentImage] || "/placeholder.svg"}
+          src={mainImage}
           alt={`${productName} - Vista ${currentImage + 1}`}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"

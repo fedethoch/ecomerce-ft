@@ -6,12 +6,14 @@ import { ProductType } from "@/types/products/products"
 import { AppActionError } from "@/types/types"
 
 export const createProduct = async (
-  values: Omit<ProductType, "id" | "image">,
-  imageFile: File
+  values: Omit<ProductType, "id" | "imagePaths">,
+  imageFiles: File[] | File // <-- acepta ambos
 ) => {
   return actionHandler(async () => {
     const productService = new ProductService();
-    return await productService.createProduct(values, imageFile);
+    // Normaliza a array antes de pasar
+    const filesArray = Array.isArray(imageFiles) ? imageFiles : [imageFiles];
+    return await productService.createProduct(values, filesArray);
   });
 };
 

@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
-import { OrderWithDetails } from "@/types/orders/types"
+import { Order, OrderItem, OrderWithDetails } from "@/types/orders/types"
 import type { SupabaseClient } from "@supabase/supabase-js"
+
+
 
 export class OrdersRepository {
   private supabase: SupabaseClient | null = null;
@@ -14,7 +16,6 @@ export class OrdersRepository {
 
   async getOrders(): Promise<OrderWithDetails[]> {
     const supabase = await this.getSupabase();
-    
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -33,7 +34,6 @@ export class OrdersRepository {
 
   async getOrder(id: string): Promise<OrderWithDetails> {
     const supabase = await this.getSupabase();
-    
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -53,7 +53,6 @@ export class OrdersRepository {
 
   async updateOrderStatus(id: string, status: string): Promise<OrderWithDetails> {
     const supabase = await this.getSupabase();
-    
     const { data, error } = await supabase
       .from("orders")
       .update({ status })
@@ -70,5 +69,59 @@ export class OrdersRepository {
 
     if (error) throw error;
     return data as OrderWithDetails;
+  }
+
+  // NUEVOS MÉTODOS
+
+  async createOrder(order: Partial<Order>): Promise<Order> {
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
+      .from("orders")
+      .insert(order)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  }
+
+  async getOrderByExternalReference(external_reference: string): Promise<Order | null> {
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("external_reference", external_reference)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") return null; // Not found
+      throw error;
+    }
+    return data as Order;
+  }
+
+  async updateOrder(order: Order): Promise<Order> {
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
+      .from("orders")
+      .update(order)
+      .eq("id", order.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  }
+
+  async createOrderItem(orderItem: Partial<OrderItem>): Promise<OrderItem> {
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
+      .from("order_items")
+      .insert(orderItem)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+    return data as OrderItem;
   }
 }

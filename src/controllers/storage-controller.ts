@@ -12,9 +12,10 @@ export async function uploadImage(file: File) {
   })
 }
 
-export async function uploadProductImage(file: File, productId: string) {
+export async function uploadProductImages(files: File[], productId: string) {
   return await actionHandler(async () => {
-    const uploadResult = await storageService.uploadProductImage(file, productId)
-    return uploadResult.url
+    const uploadResults = await storageService.uploadProductImage(files, productId)
+    // Devuelve un array de URLs de todas las imágenes subidas
+    return uploadResults.map(result => result.url)
   })
 }

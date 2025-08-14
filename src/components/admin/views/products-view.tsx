@@ -34,7 +34,7 @@ export function ProductsView({ setActiveView }: ProductsViewProps) {
 
   const handleViewProduct = (id: string) => {
     // Navegar a la página de detalle del producto
-    router.push(`/admin/products/${id}`)
+    router.push(`/productos/${id}`)
   }
 
   const handleEditProduct = (id: string) => {
@@ -104,7 +104,7 @@ export function ProductsView({ setActiveView }: ProductsViewProps) {
                   <TableRow key={product.id}>
                     <TableCell>
                       <img
-                        src={(product.image && product.image[0]) || "/placeholder.svg?height=60&width=60"}
+                        src={(product.imagePaths && product.imagePaths[0]) || "/placeholder.svg?height=60&width=60"}
                         alt={product.name}
                         className="h-12 w-12 rounded-md object-cover"
                       />

@@ -37,7 +37,7 @@ export function useProducts() {
   // Nueva función para obtener un solo producto
   const getProduct = async (id: string): Promise<ProductType | null> => {
     try {
-      setLoading(true)
+      // NO uses setLoading aquí
       const data = await getProductController(id)
 
       if (isAppActionError(data)) {
@@ -50,18 +50,17 @@ export function useProducts() {
       setError("Error al cargar el producto")
       console.error(err)
       return null
-    } finally {
-      setLoading(false)
     }
+    // NO uses setLoading aquí
   }
 
-  const addProduct = async (productData: Omit<ProductType, "id" | "image">, imageFile: File) => {
-    try {
-
-      console.log("Datos del producto:", productData);
-      console.log("Archivo de imagen:", imageFile);
-      
-      const newProduct = await createProduct(productData, imageFile)
+  const addProduct = async (
+      productData: Omit<ProductType, "id" | "imagePaths">,
+      imageFiles: File[] | File
+    ) => {
+      try {
+        const filesArray = Array.isArray(imageFiles) ? imageFiles : [imageFiles];
+        const newProduct = await createProduct(productData, filesArray);
 
       console.log("Producto creado:", newProduct);
 

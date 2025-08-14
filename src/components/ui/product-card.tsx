@@ -30,10 +30,15 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsLiked(!isLiked)
   }
 
-  // Usamos la primera imagen del array
-  const mainImage = product.image && product.image.length > 0 
-    ? product.image[0] 
-    : "/placeholder.svg"
+  // Usamos la primera imagen del array imagePaths
+  const mainImage =
+    Array.isArray(product.imagePaths) && product.imagePaths.length > 0
+      ? product.imagePaths[0]
+      : "/placeholder.svg"
+
+  // Debug: muestra el array y la URL que se usará
+  console.log("imagePaths para producto", product.name, ":", product.imagePaths)
+  console.log("URL usada para", product.name, ":", mainImage)
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">

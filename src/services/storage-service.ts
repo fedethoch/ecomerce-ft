@@ -37,26 +37,42 @@ export class StorageService {
     }
   }
 
-  async uploadProductImage(file: File, productId: string): Promise<UploadResult> {
+  async uploadProductImage(files: File[] | File, productId: string): Promise<UploadResult[]> {
     const user = await authService.getUser()
+    if (!user) throw new UnauthorizedException("Usuario no autenticado");
+    // if (user.type_role !== "admin") {
+    //    throw new ForbiddenException("Usuario no autorizado")
+    //  }
+    const filesArray = Array.isArray(files) ? files : [files];
+    filesArray.forEach(this.validateImageFile);
+    // 1. Normalizar nombres
+    const safeProductName = productId
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+    
+    // 2. Normalizar nombre de archivo
+    
+    
+    
+    // 3. Generar path seguro
+      const timestamp = Date.now();
+      
+      
+   
 
-    if (!user) {
-      throw new UnauthorizedException("Usuario no autenticado")
-    }
 
-    if (user.role !== "admin") {
-      throw new ForbiddenException("Usuario no autorizado")
-    }
-
-    this.validateImageFile(file)
-
-    return this.storageRepository.uploadFile({
-      file,
+    return this.storageRepository.uploadMultipleFiles(
+      filesArray,
       productId,
-      bucket: "products-images",
-      options: { upsert: true },
-    })
+      "products-images",
+      `products/${safeProductName}`,
+      { contentType: filesArray[0]?.type, upsert: true }
+    );
   }
+
+  
 
 
   async deleteFile(path: string, bucket: string): Promise<void> {

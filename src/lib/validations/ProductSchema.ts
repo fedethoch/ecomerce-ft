@@ -1,96 +1,40 @@
-import { z } from "zod"
+import { z } from "zod";
 
+// Esquema para tamaños
+const SizeSchema = z.enum(["XS", "S", "M", "L", "XL", "XXL"]);
+
+// Esquema principal para productos
 export const ProductSchema = z.object({
-  name: z.string().min(1, { message: "El nombre es requerido" }),
-  start_date: z.date().min(
-    new Date(Date.now() - 24 * 60 * 60 * 1000), // Un día antes de hoy
-    {
-      message:
-        "La fecha de inicio debe ser como máximo un día antes de la fecha actual",
-    }
-  ),
-  end_date: z.date().min(new Date(), {
-    message: "La fecha de fin debe ser mayor a la fecha actual",
-  }),
-  modality: z.string().min(1, { message: "La modalidad es requerida" }),
-  price_ars: z.number().min(1, { message: "El precio en ARS es requerido" }),
-  price_usd: z.number().min(1, { message: "El precio en USD es requerido" }),
-  target_audience: z
-    .string()
-    .min(1, { message: "El público objetivo es requerido" }),
-  image_url: z.string().min(1, { message: "La URL de la imagen es requerida" }),
-  teacher: z.string().min(1, { message: "El profesor es requerido" }),
-  objectives: z.array(z.string()).min(1, {
-    message: "Los objetivos son requeridos",
-  }),
-  modules: z
-    .array(
-      z.object({
-        title: z
-          .string()
-          .min(1, { message: "El título del módulo es requerido" }),
-        subtopics: z.array(z.string()).min(1, {
-          message: "Debe haber al menos un subtema",
-        }),
-        video_url: z
-          .string()
-          .min(1, { message: "La URL del video es requerida" }),
-      })
-    )
-    .min(1, { message: "Debe haber al menos un módulo" }),
-})
+  id: z.string().uuid().optional(),
+  name: z.string().min(1, "El nombre es requerido"),
+  price: z.number().min(0.01, "El precio debe ser mayor a 0"),
+  originalPrice: z.number().optional().nullable(),
+  quantity: z.number().int("Debe ser entero").min(0, "No puede ser negativo"),
+  category: z.string().min(1, "La categoría es requerida"),
+  isNew: z.boolean().optional().default(false),
+  isSale: z.boolean().optional().default(false),
+  sizes: z.array(z.string()).min(1, "Selecciona al menos una talla"),
+  description: z.string().min(10, "Mínimo 10 caracteres"),
+  imagePaths: z.array(z.string().url("URL inválida"))
+    .min(1, "Al menos 1 imagen requerida")
+});
 
-export const ModuleSchema = z.object({
-  id: z.string().min(1, { message: "El ID del módulo es requerido" }),
-  title: z.string().min(1, { message: "El título del módulo es requerido" }),
-  subtopics: z.array(z.string()).min(1, {
-    message: "Debe haber al menos un subtema",
-  }),
-  video_url: z.string().min(1, { message: "La URL del video es requerida" }),
-})
+// Esquema para creación de productos (sin ID)
+export const ProductCreationSchema = ProductSchema.omit({ 
+  imagePaths: true 
+}).extend({
+  imageFile: z.instanceof(File, { message: "Archivo requerido" })
+    .refine(file => file.size <= 5 * 1024 * 1024, "Máximo 5MB")
+    .refine(file => [
+      "image/jpeg", 
+      "image/png", 
+      "image/webp"
+    ].includes(file.type), "Formato inválido (JPEG, PNG, WEBP)")
+});
 
-// Schema para validar los datos del formulario antes de procesar archivos
-export const ProductFormDataSchema = z
-  .object({
-    name: z.string().min(1, { message: "El nombre del curso es requerido" }),
-    modality: z.string().min(1, { message: "La modalidad es requerida" }),
-    target_audience: z
-      .string()
-      .min(1, { message: "El público objetivo es requerido" }),
-    teacher: z.string().min(1, { message: "El profesor es requerido" }),
-    price_ars: z
-      .number()
-      .min(0.01, { message: "El precio en ARS debe ser mayor a 0" }),
-    price_usd: z
-      .number()
-      .min(0.01, { message: "El precio en USD debe ser mayor a 0" }),
-    objectives: z
-      .array(z.string().min(1))
-      .min(1, { message: "Debe haber al menos un objetivo" }),
-    start_date: z.date().min(new Date(Date.now() - 24 * 60 * 60 * 1000), {
-      message:
-        "La fecha de inicio debe ser como máximo un día antes de la fecha actual",
-    }),
-    end_date: z.date().min(new Date(), {
-      message: "La fecha de fin debe ser mayor a la fecha actual",
-    }),
-  })
-  .refine((data) => data.start_date <= data.end_date, {
-    message: "La fecha de inicio no puede ser mayor a la fecha de fin",
-    path: ["start_date"],
-  })
+// Esquema para actualización de productos
+export const ProductUpdateSchema = ProductCreationSchema.partial();
 
-// Schema para validar los módulos del formulario
-export const ModuleFormDataSchema = z.object({
-  id: z.string().min(1, { message: "El ID del módulo es requerido" }),
-  title: z.string().min(1, { message: "El título del módulo es requerido" }),
-  topics: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .min(1, { message: "El nombre del subtema es requerido" }),
-      })
-    )
-    .min(1, { message: "Debe haber al menos un subtema" }),
-})
+// Tipos derivados
+export type ProductFormValues = z.infer<typeof ProductCreationSchema>;
+export type ProductUpdateValues = z.infer<typeof ProductUpdateSchema>;

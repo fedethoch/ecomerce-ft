@@ -16,7 +16,8 @@ interface CreateProductViewProps {
 export function CreateProductView({ setActiveView }: CreateProductViewProps) {
   const { addProduct } = useProducts()
   const [loading, setLoading] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [formData, setFormData] = useState<Omit<ProductType, "id">>({
@@ -28,23 +29,29 @@ export function CreateProductView({ setActiveView }: CreateProductViewProps) {
     isSale: false,
     sizes: [],
     originalPrice: 0,
-    image: [],
+    imagePaths: [],
     description: "",
   })
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!imageFile) {
+    if (!imageFiles) {
       alert("Por favor selecciona una imagen");
       setLoading(false);
       return;
     }
-
+    if (formData.description.length < 10) {
+      alert("Descripcion minimo 10 caracteres");
+      setLoading(false);
+      return;
+    }
     try {
       console.log("Iniciando creación de producto...");
-      const result = await addProduct(formData, imageFile);
+      const result = await addProduct(formData, imageFiles);
       
       if (result) {
         console.log("Producto creado exitosamente:", result);
@@ -70,10 +77,26 @@ export function CreateProductView({ setActiveView }: CreateProductViewProps) {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0])
+    if (e.target.files) {
+      setImageFiles(Array.from(e.target.files))
+      setMainImageIndex(0) // reset principal al agregar nuevas imágenes
     }
   }
+
+
+  const handleRemoveImage = (idx: number) => {
+    setImageFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== idx)
+      // Si eliminamos la principal, la nueva principal será la 0
+      if (idx === mainImageIndex) {
+        setMainImageIndex(0)
+      } else if (idx < mainImageIndex) {
+        setMainImageIndex(mainImageIndex - 1)
+      }
+      return newFiles
+    })
+  }
+
 
   return (
     <div className="space-y-6">
@@ -171,6 +194,8 @@ export function CreateProductView({ setActiveView }: CreateProductViewProps) {
                     ...prev, 
                     description: e.target.value 
                   }))}
+                  minLength={10}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -240,31 +265,80 @@ export function CreateProductView({ setActiveView }: CreateProductViewProps) {
               </div>
               
               <div className="space-y-2">
-                <Label>Imagen del Producto</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Seleccionar Imagen
-                  </Button>
-                  {imageFile && (
-                    <span className="text-sm truncate max-w-[150px]">
-                      {imageFile.name}
-                    </span>
+                <Label>Imágenes</Label>
+                <div className="flex items-start gap-3 flex-wrap flex-col">
+                  {/* Imágenes seleccionadas arriba */}
+                  {imageFiles.length > 0 && (
+                    <div className="flex gap-4 flex-wrap mb-2">
+                      {imageFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group flex flex-col items-center"
+                          style={{ width: 90 }}
+                        >
+                          <div
+                            className={`rounded-lg overflow-hidden border transition-all duration-300
+                              ${idx === mainImageIndex
+                                ? "ring-2 ring-blue-500 scale-105 shadow-lg"
+                                : "hover:ring-2 hover:ring-blue-300"}
+                          `}
+                          style={{ width: 80, height: 80, cursor: "pointer" }}
+                          onClick={() => setMainImageIndex(idx)}
+                        >
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                          />
+                          {/* Badge principal */}
+                          {idx === mainImageIndex && (
+                            <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs max-w-[80px] truncate mt-2 text-center">{file.name}</span>
+                        {/* Botón eliminar debajo de la imagen */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
+                          title="Eliminar imagen"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                   )}
+
+                  {/* Botón para seleccionar imágenes */}
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      multiple
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Seleccionar Imágenes
+                    </Button>
+                  </div>
+
+                  {/* Texto debajo */}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Imágenes del Producto<br />
+                    Formatos: JPG, PNG, WEBP. Máx. 5MB
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Formatos: JPG, PNG, WEBP. Máx. 5MB
-                </p>
               </div>
             </CardContent>
           </Card>

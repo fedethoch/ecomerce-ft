@@ -4,7 +4,7 @@ export interface PublicUser {
   email: string
   name: string
   phone: string
-  role: "user" | "admin"
+  type_role: "user" | "admin"
 }
 
 export type AppActionError = {
