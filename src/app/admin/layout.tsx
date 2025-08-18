@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AppSidebar } from "@/components/admin/app-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -24,5 +25,11 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  return <div className="">{children}</div>;
+  return (<div className="">
+    <div>
+    <AppSidebar />
+    </div>
+    
+    <main className="w-full">{children}</main>
+  </div>);
 }

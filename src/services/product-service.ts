@@ -61,7 +61,9 @@ export class ProductService {
 
   async getProducts(): Promise<ProductType[]> {
     const productsRepository = await this.getRepository();
-    return productsRepository.getProducts();
+    const res = await productsRepository.getProducts();
+    console.log("[SERVICE] getProducts sample:", res.slice(0,5).map(p => ({ id: p.id, isOutstanding: p.isOutstanding })));
+    return res;
   }
 
   async getProduct(id: string): Promise<ProductType | null> {

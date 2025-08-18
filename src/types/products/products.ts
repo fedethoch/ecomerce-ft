@@ -7,9 +7,11 @@ export type ProductType = {
   category: string
   isNew?: boolean
   isSale?: boolean
+  isOutstanding?: boolean
   sizes: string[]
   description: string
   imagePaths: string[] 
+  weightGrams?: number
 };
 
 export type ProductStatus = "Activo" | "Bajo Stock" | "Agotado"

@@ -7,57 +7,61 @@ export function CategorySection() {
     {
       name: "Hombre",
       href: "/productos?category=hombre",
-      image: "/placeholder.svg?height=400&width=300",
+      image: "/men-category.jpg",
       description: "Estilo masculino contemporáneo",
     },
     {
       name: "Mujer",
       href: "/productos?category=mujer",
-      image: "/placeholder.svg?height=400&width=300",
+      image: "/women-category.jpg",
       description: "Elegancia y sofisticación",
     },
     {
-      name: "Accesorios",
-      href: "/productos?category=accesorios",
-      image: "/placeholder.svg?height=400&width=300",
-      description: "Complementa tu look",
+      name: "Niño/a",
+      href: "/productos?category=nino",
+      image: "/children-category.jpg",
+      description: "Moda infantil divertida y cómoda",
     },
   ]
 
   return (
-    <section className="py-16 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Explora por Categoría</h2>
-          <p className="text-muted-foreground text-lg">Encuentra exactamente lo que buscas</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {categories.map((category, index) => (
-            <div
+    <section className="w-full bg-background">
+      <div className="w-full">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 h-screen">
+          {categories.map((category) => (
+            <li
               key={category.name}
-              className="group relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 200}ms` }}
+              className="group bg-card text-foreground transition-all duration-300 hover:shadow-lg relative"
             >
-              <div className="aspect-[3/4] overflow-hidden">
+              <div className="relative h-full w-full overflow-hidden">
                 <Image
                   src={category.image || "/placeholder.svg"}
                   alt={category.name}
-                  width={300}
-                  height={400}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(min-width:1536px) 720px,
+                         (min-width:1280px) 600px,
+                         (min-width:1024px) 520px,
+                         (min-width:640px) 400px,
+                         100vw"
+                  quality={90}
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+                <div className="absolute inset-0 flex flex-col justify-end p-8">
+                  <h3 className="mb-2 text-2xl font-bold text-white">{category.name}</h3>
+                  <p className="mb-4 text-white/90">{category.description}</p>
+                  <Button
+                    asChild
+                    className="w-full max-w-xs bg-white text-black hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <Link href={category.href}>Explorar {category.name}</Link>
+                  </Button>
+                </div>
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{category.name}</h3>
-                <p className="text-muted-foreground mb-4">{category.description}</p>
-                <Button asChild className="w-full">
-                  <Link href={category.href}>Explorar {category.name}</Link>
-                </Button>
-              </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )

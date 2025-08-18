@@ -9,6 +9,50 @@ import { ValidationException } from "@/exceptions/base/base-exceptions"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { v4 as uuidv4 } from 'uuid';
 
+function fromRow(prod: any): ProductType {
+  return {
+    id: String(prod.id),
+    name: String(prod.name ?? ""),
+    price: Number(prod.price ?? 0),
+    originalPrice: prod.original_price ?? undefined,
+    quantity: Number(prod.quantity ?? 0),
+    category: String(prod.category ?? ""),
+    isNew: !!(prod.is_new ?? false),
+    isSale: !!(prod.is_sale ?? false),
+    isOutstanding: !!(prod.is_outstanding ?? false),
+    sizes: Array.isArray(prod.sizes) ? prod.sizes : [],
+    description: String(prod.description ?? ""),
+    imagePaths: Array.isArray(prod.image_paths) ? prod.image_paths : [], // 👈 tu tabla usa image_paths
+    weightGrams: prod.weight_grams ?? undefined,
+  }
+}
+
+// Util para mapear camel -> snake (escritura a DB)
+function toRow(updates: Partial<Omit<ProductType, "id">>) {
+  const out: Record<string, any> = {}
+
+  if ("name" in updates) out.name = updates.name
+  if ("price" in updates) out.price = updates.price
+  if ("originalPrice" in updates) out.original_price = updates.originalPrice
+  if ("quantity" in updates) out.quantity = updates.quantity
+  if ("category" in updates) out.category = updates.category
+  if ("isNew" in updates) out.is_new = updates.isNew
+  if ("isSale" in updates) out.is_sale = updates.isSale
+  if ("isOutstanding" in updates) out.is_outstanding = updates.isOutstanding
+  if ("sizes" in updates) out.sizes = updates.sizes
+  if ("description" in updates) out.description = updates.description
+  if ("imagePaths" in updates) out.image_paths = updates.imagePaths // 👈 consistente con createProduct
+  if ("weightGrams" in updates) out.weight_grams = updates.weightGrams
+
+  return out
+}
+
+
+
+
+
+
+
 export class ProductsRepository {
   private supabase: SupabaseClient | null = null;
 
@@ -53,6 +97,7 @@ export class ProductsRepository {
       category: values.category,
       is_new: values.isNew,
       is_sale: values.isSale,
+      is_outstanding: values.isOutstanding,
       sizes: values.sizes,
       description: values.description,
       image_paths: values.imagePaths
@@ -95,10 +140,9 @@ export class ProductsRepository {
       );
     }
     // Mapeo aquí:
-    return data.map((prod: any) => ({
-      ...prod,
-      imagePaths: prod.image_paths || [],
-    })) as ProductType[];
+    const mapped = data.map(fromRow)
+    
+    return mapped
 }
 
   async getProduct(id: string): Promise<ProductType> {
@@ -148,10 +192,8 @@ export class ProductsRepository {
     }
 
     // Mapeo aquí:
-    return data.map((prod: any) => ({
-      ...prod,
-      imagePaths: prod.image_paths || [],
-    })) as ProductType[];
+    const mapped = data.map(fromRow)
+    return mapped;
   }
 
   async updateProduct(id: string, updates: Partial<Omit<ProductType, "id">>) {

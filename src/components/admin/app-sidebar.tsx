@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
   Home,
@@ -25,62 +27,78 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const navigationItems = [
-  {
-    title: "Dashboard",
-    icon: Home,
-    id: "dashboard",
-  },
-  {
-    title: "Productos",
-    icon: Package,
-    id: "products",
-  },
-  {
-    title: "Pedidos",
-    icon: ShoppingCart,
-    id: "orders",
-  },
-  {
-    title: "Clientes",
-    icon: Users,
-    id: "customers",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    id: "analytics",
-  },
-  {
-    title: "Configuración",
-    icon: Settings,
-    id: "settings",
-  },
+  { title: "Dashboard",     icon: Home,        id: "dashboard" },
+  { title: "Productos",     icon: Package,     id: "products" },
+  { title: "Pedidos",       icon: ShoppingCart,id: "orders" },
+  { title: "Clientes",      icon: Users,       id: "customers" },
+  { title: "Analytics",     icon: BarChart3,   id: "analytics" },
+  { title: "Configuración", icon: Settings,    id: "settings" },
 ]
 
-interface AppSidebarProps {
-  activeView: string
-  setActiveView: (view: string) => void
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
+// --- Helpers ruta <-> vista ---
+function segmentsFromPath(pathname: string): string[] {
+  const parts = pathname.replace(/^\/|\/$/g, "").split("/")
+  const i = parts.indexOf("admin")
+  return i >= 0 ? parts.slice(i + 1) : []
 }
 
-export function AppSidebar({ activeView, setActiveView, sidebarOpen, setSidebarOpen }: AppSidebarProps) {
+function activeViewFromPath(pathname: string): string {
+  const [first] = segmentsFromPath(pathname)
+  if (!first) return "dashboard"
+  if (first === "products") return "products" // incluye /new y /:id/edit
+  if (["orders", "customers", "analytics", "settings", "dashboard"].includes(first)) return first
+  return "dashboard"
+}
+
+function pathForView(view: string): string {
+  switch (view) {
+    case "dashboard":  return "/admin"
+    case "products":   return "/admin/products"
+    case "orders":     return "/admin/orders"
+    case "customers":  return "/admin/customers"
+    case "analytics":  return "/admin/analytics"
+    case "settings":   return "/admin/settings"
+    default:           return "/admin"
+  }
+}
+
+export function AppSidebar() {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  // Estado interno (sin props)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeView, setActiveView] = useState<string>("dashboard")
+
+  // Sincroniza el activeView con la URL actual
+  useEffect(() => {
+    setActiveView(activeViewFromPath(pathname))
+  }, [pathname])
+
+  // Navegación desde el sidebar
+  const handleNav = (viewId: string) => {
+    const target = pathForView(viewId)
+    if (target !== pathname) router.push(target, { scroll: false })
+    setActiveView(viewId)
+    if (window.innerWidth < 1024 && !sidebarOpen) setSidebarOpen(true)
+  }
+
   return (
     <TooltipProvider delayDuration={0}>
       <div
         className={cn(
-          "fixed left-0 bg-background border-r z-40 transition-all duration-300 ease-in-out",
+          "absolute left-0 bg-background border-r z-40 transition-all duration-300 ease-in-out",
           "h-[calc(100vh-64px)] top-16",
           sidebarOpen ? "w-64" : "w-16",
         )}
       >
         {/* Header del sidebar con botón toggle */}
         <div className="flex items-center justify-between p-4 border-b h-[73px]">
-          {/* Contenedor del logo y texto - se colapsa para centrar el botón */}
+          {/* Logo + texto (colapsable) */}
           <div
             className={cn(
               "flex items-center gap-3 transition-all duration-200 overflow-hidden",
-              sidebarOpen ? "flex-1 opacity-100" : "w-0 opacity-0", // flex-1 cuando abierto, w-0 cuando cerrado
+              sidebarOpen ? "flex-1 opacity-100" : "w-0 opacity-0",
             )}
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -98,7 +116,7 @@ export function AppSidebar({ activeView, setActiveView, sidebarOpen, setSidebarO
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={() => setSidebarOpen((v) => !v)}
                 className="h-10 w-10 hover:bg-accent shrink-0"
               >
                 <div className="relative h-4 w-4">
@@ -137,12 +155,7 @@ export function AppSidebar({ activeView, setActiveView, sidebarOpen, setSidebarO
                         sidebarOpen ? "w-full justify-start gap-3" : "w-10 justify-center p-0",
                         activeView === item.id && "bg-accent text-accent-foreground",
                       )}
-                      onClick={() => {
-                        setActiveView(item.id)
-                        if (window.innerWidth < 1024 && !sidebarOpen) {
-                          setSidebarOpen(true)
-                        }
-                      }}
+                      onClick={() => handleNav(item.id)}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {sidebarOpen && <span className="truncate">{item.title}</span>}
