@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import Image from "next/image"
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
 
 export function HeroSection() {
   return (
-    <section className="relative flex h-[80vh] items-center justify-center overflow-hidden bg-background">
+    <section className="flex h-[calc(100vh-136px)] items-center justify-center overflow-hidden bg-background">
       {/* Fondo */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -38,8 +38,13 @@ export function HeroSection() {
 
           {/* Descripción */}
           <p className="mx-auto mb-12 max-w-3xl text-xl font-light leading-relaxed text-white md:text-2xl">
-            Explora nuestra colección de moda contemporánea diseñada para quienes buscan
-            <span className="font-medium text-accent"> elegancia y autenticidad</span> en cada pieza.
+            Explora nuestra colección de moda contemporánea diseñada para
+            quienes buscan
+            <span className="font-medium text-accent">
+              {" "}
+              elegancia y autenticidad
+            </span>{" "}
+            en cada pieza.
           </p>
 
           {/* Botones */}
@@ -75,7 +80,10 @@ export function HeroSection() {
               size="lg"
               className="rounded-full border-2 border-accent px-10 py-7 text-lg font-semibold text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-accent hover:text-accent-foreground"
             >
-              <Link href="/productos?category=nuevos" className="flex items-center gap-2">
+              <Link
+                href="/productos?category=nuevos"
+                className="flex items-center gap-2"
+              >
                 Ver Novedades
                 <svg
                   className="h-5 w-5"
@@ -96,5 +104,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -21,15 +21,14 @@ export default async function AdminLayout({
     .eq("id", authData.user.id)
     .single();
 
-  if (error || !userData  || userData.type_role !== "admin") {
+  if (error || !userData || userData.type_role !== "admin") {
     redirect("/");
   }
 
-  return (<div className="">
+  return (
     <div>
-    <AppSidebar />
+      <AppSidebar />
+      <main className="">{children}</main>
     </div>
-    
-    <main className="w-full">{children}</main>
-  </div>);
+  );
 }

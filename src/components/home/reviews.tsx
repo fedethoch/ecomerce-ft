@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { Star } from "lucide-react"
-import { Card } from "@/components/ui/card"
+import { Star } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface Review {
-  id: number
-  name: string
-  rating: number
-  comment: string
-  product: string
-  verified: boolean
+  id: number;
+  name: string;
+  rating: number;
+  comment: string;
+  product: string;
+  verified: boolean;
 }
 
 const reviews: Review[] = [
@@ -17,7 +17,8 @@ const reviews: Review[] = [
     id: 1,
     name: "María González",
     rating: 5,
-    comment: "La calidad de la ropa es excepcional. Los materiales se sienten premium y el ajuste es perfecto.",
+    comment:
+      "La calidad de la ropa es excepcional. Los materiales se sienten premium y el ajuste es perfecto.",
     product: "Vestido de verano",
     verified: true,
   },
@@ -25,7 +26,8 @@ const reviews: Review[] = [
     id: 2,
     name: "Carlos Rodríguez",
     rating: 5,
-    comment: "Excelente servicio al cliente y envío rápido. La camisa llegó exactamente como se veía en las fotos.",
+    comment:
+      "Excelente servicio al cliente y envío rápido. La camisa llegó exactamente como se veía en las fotos.",
     product: "Camisa casual",
     verified: true,
   },
@@ -33,15 +35,16 @@ const reviews: Review[] = [
     id: 3,
     name: "Ana Martínez",
     rating: 5,
-    comment: "Me encanta la variedad de estilos. Siempre encuentro algo perfecto para cada ocasión.",
+    comment:
+      "Me encanta la variedad de estilos. Siempre encuentro algo perfecto para cada ocasión.",
     product: "Conjunto completo",
     verified: true,
   },
-]
+];
 
 export default function Reviews() {
-  const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
-  const totalReviews = 1247 // Número simulado de reviews totales
+  const averageRating =
+    reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
 
   return (
     <section className="py-16 px-4" style={{ backgroundColor: "#F8F7F4" }}>
@@ -51,18 +54,25 @@ export default function Reviews() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-6 h-6 fill-current" style={{ color: "#8B1E3F" }} />
+                <Star
+                  key={i}
+                  className="w-6 h-6 fill-current"
+                  style={{ color: "#8B1E3F" }}
+                />
               ))}
             </div>
             <span className="text-2xl font-bold" style={{ color: "#0B1220" }}>
               {averageRating.toFixed(1)}
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-2" style={{ color: "#0B1220" }}>
+          <h2
+            className="text-3xl md:text-4xl font-bold mb-2"
+            style={{ color: "#0B1220" }}
+          >
             Lo que dicen nuestros clientes
           </h2>
           <p className="text-lg" style={{ color: "#6B7280" }}>
-            Más de {totalReviews.toLocaleString()} clientes satisfechos confían en nosotros
+            Más de 1247 clientes satisfechos confían en nosotros
           </p>
         </div>
 
@@ -92,7 +102,10 @@ export default function Reviews() {
               </div>
 
               {/* Review Text */}
-              <blockquote className="text-base mb-4 leading-relaxed" style={{ color: "#0B1220" }}>
+              <blockquote
+                className="text-base mb-4 leading-relaxed"
+                style={{ color: "#0B1220" }}
+              >
                 {review.comment}
               </blockquote>
 
@@ -100,7 +113,10 @@ export default function Reviews() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm" style={{ color: "#0B1220" }}>
+                    <p
+                      className="font-semibold text-sm"
+                      style={{ color: "#0B1220" }}
+                    >
                       {review.name}
                     </p>
                     {review.verified && (
@@ -132,10 +148,10 @@ export default function Reviews() {
               backgroundColor: "#1E3A8A",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#172C6F"
+              e.currentTarget.style.backgroundColor = "#172C6F";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#1E3A8A"
+              e.currentTarget.style.backgroundColor = "#1E3A8A";
             }}
           >
             Ver todas las reseñas
@@ -143,5 +159,5 @@ export default function Reviews() {
         </div>
       </div>
     </section>
-  )
+  );
 }

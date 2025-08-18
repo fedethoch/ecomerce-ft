@@ -1,25 +1,35 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useProducts } from "@/hooks/use-products"
-import type { ProductType } from "@/types/products/products"
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useProducts } from "@/hooks/use-products";
+import type { ProductType } from "@/types/products/products";
+import { useRouter } from "next/navigation";
 
-interface CreateProductViewProps {
-  setActiveView: (view: string) => void
-}
+export default function Page() {
+  const { addProduct } = useProducts();
+  const [loading, setLoading] = useState(false);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-export function Page({ setActiveView }: CreateProductViewProps) {
-  const { addProduct } = useProducts()
-  const [loading, setLoading] = useState(false)
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  
   const [formData, setFormData] = useState<Omit<ProductType, "id">>({
     name: "",
     price: 0,
@@ -31,9 +41,7 @@ export function Page({ setActiveView }: CreateProductViewProps) {
     originalPrice: 0,
     imagePaths: [],
     description: "",
-  })
-
-  
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +60,9 @@ export function Page({ setActiveView }: CreateProductViewProps) {
     try {
       console.log("Iniciando creación de producto...");
       const result = await addProduct(formData, imageFiles);
-      
+
       if (result) {
         console.log("Producto creado exitosamente:", result);
-        setActiveView("products");
       } else {
         console.warn("La creación del producto no devolvió resultado");
       }
@@ -64,48 +71,52 @@ export function Page({ setActiveView }: CreateProductViewProps) {
       alert(`Error al crear producto: ${error.message || "Error desconocido"}`);
     } finally {
       setLoading(false);
+      router.push("/admin/products");
     }
   };
 
   const toggleSize = (size: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       sizes: prev.sizes.includes(size)
-        ? prev.sizes.filter(s => s !== size)
-        : [...prev.sizes, size]
+        ? prev.sizes.filter((s) => s !== size)
+        : [...prev.sizes, size],
     }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setImageFiles(Array.from(e.target.files))
-      setMainImageIndex(0) // reset principal al agregar nuevas imágenes
+      setImageFiles(Array.from(e.target.files));
+      setMainImageIndex(0); // reset principal al agregar nuevas imágenes
     }
-  }
-
+  };
 
   const handleRemoveImage = (idx: number) => {
-    setImageFiles(prev => {
-      const newFiles = prev.filter((_, i) => i !== idx)
+    setImageFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== idx);
       // Si eliminamos la principal, la nueva principal será la 0
       if (idx === mainImageIndex) {
-        setMainImageIndex(0)
+        setMainImageIndex(0);
       } else if (idx < mainImageIndex) {
-        setMainImageIndex(mainImageIndex - 1)
+        setMainImageIndex(mainImageIndex - 1);
       }
-      return newFiles
-    })
-  }
-
+      return newFiles;
+    });
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-8 absolute left-64 w-[calc(100%-16rem)]">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Crear Producto</h1>
-          <p className="text-muted-foreground">Añade un nuevo producto a tu inventario</p>
+          <p className="text-muted-foreground">
+            Añade un nuevo producto a tu inventario
+          </p>
         </div>
-        <Button variant="outline" onClick={() => setActiveView("products")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/admin/products")}
+        >
           Volver a Productos
         </Button>
       </div>
@@ -115,7 +126,9 @@ export function Page({ setActiveView }: CreateProductViewProps) {
           <Card>
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
-              <CardDescription>Detalles principales del producto</CardDescription>
+              <CardDescription>
+                Detalles principales del producto
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -124,11 +137,13 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                   id="name"
                   placeholder="Ej: Camiseta Básica Blanca"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   required
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio</Label>
@@ -140,28 +155,33 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                     value={formData.price === 0 ? "" : formData.price}
                     onChange={(e) => {
                       const value = e.target.value;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        price: value === "" ? 0 : Number.parseFloat(value)
-                      }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        price: value === "" ? 0 : Number.parseFloat(value),
+                      }));
                     }}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="original_price">Precio Original (opcional)</Label>
+                  <Label htmlFor="original_price">
+                    Precio Original (opcional)
+                  </Label>
                   <Input
                     id="original_price"
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.originalPrice === 0 ? "" : formData.originalPrice}
+                    value={
+                      formData.originalPrice === 0 ? "" : formData.originalPrice
+                    }
                     onChange={(e) => {
                       const value = e.target.value;
-                      setFormData(prev => ({
+                      setFormData((prev) => ({
                         ...prev,
-                        originalPrice: value === "" ? 0 : Number.parseFloat(value)
-                      }))
+                        originalPrice:
+                          value === "" ? 0 : Number.parseFloat(value),
+                      }));
                     }}
                   />
                 </div>
@@ -176,10 +196,10 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                   value={formData.quantity === 0 ? "" : formData.quantity} // Muestra vacío cuando es 0
                   onChange={(e) => {
                     const value = e.target.value;
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      quantity: value === "" ? 0 : Number.parseInt(value)
-                    }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      quantity: value === "" ? 0 : Number.parseInt(value),
+                    }));
                   }}
                   required
                 />
@@ -190,10 +210,12 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                   id="description"
                   placeholder="Descripción del producto"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    description: e.target.value 
-                  }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   minLength={10}
                   required
                 />
@@ -202,7 +224,9 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                 <Label htmlFor="category">Categoría</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
@@ -217,14 +241,19 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="flex gap-4">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id="is_new"
                     checked={formData.isNew}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isNew: e.target.checked }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isNew: e.target.checked,
+                      }))
+                    }
                   />
                   <Label htmlFor="is_new">Producto Nuevo</Label>
                 </div>
@@ -233,7 +262,12 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                     type="checkbox"
                     id="is_sale"
                     checked={formData.isSale}
-                    onChange={(e) => setFormData(prev => ({ ...prev, isSale: e.target.checked }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isSale: e.target.checked,
+                      }))
+                    }
                   />
                   <Label htmlFor="is_sale">En Oferta</Label>
                 </div>
@@ -244,7 +278,9 @@ export function Page({ setActiveView }: CreateProductViewProps) {
           <Card>
             <CardHeader>
               <CardTitle>Variantes</CardTitle>
-              <CardDescription>Configura tallas y otros detalles</CardDescription>
+              <CardDescription>
+                Configura tallas y otros detalles
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -254,7 +290,9 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                     <Button
                       key={size}
                       type="button"
-                      variant={formData.sizes.includes(size) ? "default" : "outline"}
+                      variant={
+                        formData.sizes.includes(size) ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() => toggleSize(size)}
                     >
@@ -263,7 +301,7 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                   ))}
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Imágenes</Label>
                 <div className="flex items-start gap-3 flex-wrap flex-col">
@@ -278,40 +316,55 @@ export function Page({ setActiveView }: CreateProductViewProps) {
                         >
                           <div
                             className={`rounded-lg overflow-hidden border transition-all duration-300
-                              ${idx === mainImageIndex
-                                ? "ring-2 ring-blue-500 scale-105 shadow-lg"
-                                : "hover:ring-2 hover:ring-blue-300"}
+                              ${
+                                idx === mainImageIndex
+                                  ? "ring-2 ring-blue-500 scale-105 shadow-lg"
+                                  : "hover:ring-2 hover:ring-blue-300"
+                              }
                           `}
-                          style={{ width: 80, height: 80, cursor: "pointer" }}
-                          onClick={() => setMainImageIndex(idx)}
-                        >
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
-                          />
-                          {/* Badge principal */}
-                          {idx === mainImageIndex && (
-                            <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
-                              Principal
-                            </span>
-                          )}
+                            style={{ width: 80, height: 80, cursor: "pointer" }}
+                            onClick={() => setMainImageIndex(idx)}
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={file.name}
+                              className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                            />
+                            {/* Badge principal */}
+                            {idx === mainImageIndex && (
+                              <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
+                                Principal
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs max-w-[80px] truncate mt-2 text-center">
+                            {file.name}
+                          </span>
+                          {/* Botón eliminar debajo de la imagen */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
+                            title="Eliminar imagen"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
                         </div>
-                        <span className="text-xs max-w-[80px] truncate mt-2 text-center">{file.name}</span>
-                        {/* Botón eliminar debajo de la imagen */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
-                          title="Eliminar imagen"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
                   )}
 
                   {/* Botón para seleccionar imágenes */}
@@ -335,7 +388,8 @@ export function Page({ setActiveView }: CreateProductViewProps) {
 
                   {/* Texto debajo */}
                   <p className="text-xs text-muted-foreground mt-2">
-                    Imágenes del Producto<br />
+                    Imágenes del Producto
+                    <br />
                     Formatos: JPG, PNG, WEBP. Máx. 5MB
                   </p>
                 </div>
@@ -345,7 +399,11 @@ export function Page({ setActiveView }: CreateProductViewProps) {
         </div>
 
         <div className="flex justify-end space-x-2 mt-6">
-          <Button type="button" variant="outline" onClick={() => setActiveView("products")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/admin/products")}
+          >
             Cancelar
           </Button>
           <Button type="submit" disabled={loading}>
@@ -354,5 +412,5 @@ export function Page({ setActiveView }: CreateProductViewProps) {
         </div>
       </form>
     </div>
-  )
+  );
 }

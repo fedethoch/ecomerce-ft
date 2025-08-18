@@ -1,18 +1,26 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useCart } from "@/context/cart-context"
+import type React from "react";
+import { useCart } from "@/context/cart-context";
 
-import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { ShoppingCart, User, Menu, Search, LogOut, ChevronDown, Settings } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import Cart from "@/components/cart/Cart"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { useState, useEffect, useRef, use } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  Search,
+  LogOut,
+  ChevronDown,
+  Settings,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import Cart from "@/components/cart/Cart";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,88 +28,103 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
-  const router = useRouter()
-  const { cart, setIsOpen, isOpen } = useCart()
-  const [cartItems, setCartItems] = useState(0)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
+  const router = useRouter();
+  const { cart, setIsOpen, isOpen } = useCart();
+  const [cartItems, setCartItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const pathname = usePathname();
 
-  const [suggestions, setSuggestions] = useState<Array<{ type: "product" | "category"; name: string; href?: string }>>(
-    [],
-  )
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [recentSearches, setRecentSearches] = useState<string[]>([])
-  const searchRef = useRef<HTMLDivElement>(null)
+  const [suggestions, setSuggestions] = useState<
+    Array<{ type: "product" | "category"; name: string; href?: string }>
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Estado para el usuario autenticado
-  const [user, setUser] = useState<any>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null)
+      setUser(data?.user || null);
       if (data?.user) {
-        checkUserRole(data.user.id)
+        checkUserRole(data.user.id);
       }
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
-      if (session?.user) {
-        checkUserRole(session.user.id)
-      } else {
-        setIsAdmin(false)
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+        if (session?.user) {
+          checkUserRole(session.user.id);
+        } else {
+          setIsAdmin(false);
+        }
       }
-    })
+    );
     return () => {
-      listener?.subscription.unsubscribe()
-    }
-  }, [])
+      listener?.subscription.unsubscribe();
+    };
+  }, []);
 
   const checkUserRole = async (userId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
     try {
-      const { data, error } = await supabase.from("users").select("type_role").eq("id", userId).single()
+      const { data, error } = await supabase
+        .from("users")
+        .select("type_role")
+        .eq("id", userId)
+        .single();
 
       if (data && data.type_role === "admin") {
-        setIsAdmin(true)
+        setIsAdmin(true);
       } else {
-        setIsAdmin(false)
+        setIsAdmin(false);
       }
     } catch (error) {
-      console.error("Error checking user role:", error)
-      setIsAdmin(false)
+      console.error("Error checking user role:", error);
+      setIsAdmin(false);
     }
-  }
+  };
 
   useEffect(() => {
-    setCartItems(cart.length)
-  }, [cart])
+    setCartItems(cart.length);
+  }, [cart]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("recent-searches")
+    const saved = localStorage.getItem("recent-searches");
     if (saved) {
-      setRecentSearches(JSON.parse(saved))
+      setRecentSearches(JSON.parse(saved));
     }
-  }, [])
+  }, []);
 
   const fetchSuggestions = async (query: string) => {
     if (query.length < 2) {
-      setSuggestions([])
-      return
+      setSuggestions([]);
+      return;
     }
 
-    const supabase = createClient()
-    const suggestions: Array<{ type: "product" | "category"; name: string; href?: string }> = []
+    const supabase = createClient();
+    const suggestions: Array<{
+      type: "product" | "category";
+      name: string;
+      href?: string;
+    }> = [];
 
     try {
-      const { data: products } = await supabase.from("products").select("name, id").ilike("name", `%${query}%`).limit(5)
+      const { data: products } = await supabase
+        .from("products")
+        .select("name, id")
+        .ilike("name", `%${query}%`)
+        .limit(5);
 
       if (products) {
         products.forEach((product) => {
@@ -109,98 +132,123 @@ export function Navbar() {
             type: "product",
             name: product.name,
             href: `/productos/${product.id}`,
-          })
-        })
+          });
+        });
       }
 
       const categoryMatches = categories.filter(
         (cat) =>
           cat.name.toLowerCase().includes(query.toLowerCase()) ||
-          cat.subcategories.some((sub) => sub.name.toLowerCase().includes(query.toLowerCase())),
-      )
+          cat.subcategories.some((sub) =>
+            sub.name.toLowerCase().includes(query.toLowerCase())
+          )
+      );
 
       categoryMatches.forEach((cat) => {
         if (cat.name.toLowerCase().includes(query.toLowerCase())) {
-          suggestions.push({ type: "category", name: cat.name, href: cat.href })
+          suggestions.push({
+            type: "category",
+            name: cat.name,
+            href: cat.href,
+          });
         }
         cat.subcategories.forEach((sub) => {
           if (sub.name.toLowerCase().includes(query.toLowerCase())) {
-            suggestions.push({ type: "category", name: sub.name, href: sub.href })
+            suggestions.push({
+              type: "category",
+              name: sub.name,
+              href: sub.href,
+            });
           }
-        })
-      })
+        });
+      });
 
-      setSuggestions(suggestions.slice(0, 8))
+      setSuggestions(suggestions.slice(0, 8));
     } catch (error) {
-      console.error("Error fetching suggestions:", error)
+      console.error("Error fetching suggestions:", error);
     }
-  }
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
-        fetchSuggestions(searchQuery.trim())
-        setShowSuggestions(true)
+        fetchSuggestions(searchQuery.trim());
+        setShowSuggestions(true);
       } else {
-        setSuggestions([])
-        setShowSuggestions(false)
+        setSuggestions([]);
+        setShowSuggestions(false);
       }
-    }, 300)
+    }, 300);
 
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
-        setIsSearchFocused(false)
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+        setIsSearchFocused(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-  }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      const newRecentSearches = [searchQuery.trim(), ...recentSearches.filter((s) => s !== searchQuery.trim())].slice(
-        0,
-        5,
-      )
-      setRecentSearches(newRecentSearches)
-      localStorage.setItem("recent-searches", JSON.stringify(newRecentSearches))
+      const newRecentSearches = [
+        searchQuery.trim(),
+        ...recentSearches.filter((s) => s !== searchQuery.trim()),
+      ].slice(0, 5);
+      setRecentSearches(newRecentSearches);
+      localStorage.setItem(
+        "recent-searches",
+        JSON.stringify(newRecentSearches)
+      );
 
-      setShowSuggestions(false)
-      router.push(`/productos?search=${encodeURIComponent(searchQuery.trim())}`)
+      setShowSuggestions(false);
+      router.push(
+        `/productos?search=${encodeURIComponent(searchQuery.trim())}`
+      );
     }
-  }
+  };
 
-  const handleSuggestionClick = (suggestion: { type: "product" | "category"; name: string; href?: string }) => {
+  const handleSuggestionClick = (suggestion: {
+    type: "product" | "category";
+    name: string;
+    href?: string;
+  }) => {
     if (suggestion.href) {
-      setSearchQuery("")
-      setShowSuggestions(false)
-      router.push(suggestion.href)
+      setSearchQuery("");
+      setShowSuggestions(false);
+      router.push(suggestion.href);
     } else {
-      setSearchQuery(suggestion.name)
-      setShowSuggestions(false)
-      handleSearch(new Event("submit") as any)
+      setSearchQuery(suggestion.name);
+      setShowSuggestions(false);
+      handleSearch(new Event("submit") as any);
     }
-  }
+  };
 
   const categories = [
     {
       name: "Nuevo",
       href: "/productos?category=nuevo",
       subcategories: [
-        { name: "Últimas llegadas", href: "/productos?category=nuevo&sort=latest" },
+        {
+          name: "Últimas llegadas",
+          href: "/productos?category=nuevo&sort=latest",
+        },
         { name: "Tendencias", href: "/productos?category=nuevo&featured=true" },
       ],
     },
@@ -209,7 +257,10 @@ export function Navbar() {
       href: "/productos?category=hombre",
       subcategories: [
         { name: "Remeras", href: "/productos?category=hombre&type=remeras" },
-        { name: "Pantalones", href: "/productos?category=hombre&type=pantalones" },
+        {
+          name: "Pantalones",
+          href: "/productos?category=hombre&type=pantalones",
+        },
         { name: "Buzos", href: "/productos?category=hombre&type=buzos" },
         { name: "Camperas", href: "/productos?category=hombre&type=camperas" },
         { name: "Calzado", href: "/productos?category=hombre&type=calzado" },
@@ -220,7 +271,10 @@ export function Navbar() {
       href: "/productos?category=mujer",
       subcategories: [
         { name: "Remeras", href: "/productos?category=mujer&type=remeras" },
-        { name: "Pantalones", href: "/productos?category=mujer&type=pantalones" },
+        {
+          name: "Pantalones",
+          href: "/productos?category=mujer&type=pantalones",
+        },
         { name: "Buzos", href: "/productos?category=mujer&type=buzos" },
         { name: "Camperas", href: "/productos?category=mujer&type=camperas" },
         { name: "Calzado", href: "/productos?category=mujer&type=calzado" },
@@ -240,34 +294,58 @@ export function Navbar() {
       href: "/productos?category=accesorios",
       subcategories: [
         { name: "Gorras", href: "/productos?category=accesorios&type=gorras" },
-        { name: "Relojes", href: "/productos?category=accesorios&type=relojes" },
-        { name: "Carteras", href: "/productos?category=accesorios&type=carteras" },
-        { name: "Cinturones", href: "/productos?category=accesorios&type=cinturones" },
+        {
+          name: "Relojes",
+          href: "/productos?category=accesorios&type=relojes",
+        },
+        {
+          name: "Carteras",
+          href: "/productos?category=accesorios&type=carteras",
+        },
+        {
+          name: "Cinturones",
+          href: "/productos?category=accesorios&type=cinturones",
+        },
       ],
     },
     {
       name: "Ofertas",
       href: "/productos?category=ofertas",
       subcategories: [
-        { name: "Hasta 30% OFF", href: "/productos?category=ofertas&discount=30" },
-        { name: "Hasta 50% OFF", href: "/productos?category=ofertas&discount=50" },
-        { name: "Liquidación", href: "/productos?category=ofertas&clearance=true" },
+        {
+          name: "Hasta 30% OFF",
+          href: "/productos?category=ofertas&discount=30",
+        },
+        {
+          name: "Hasta 50% OFF",
+          href: "/productos?category=ofertas&discount=50",
+        },
+        {
+          name: "Liquidación",
+          href: "/productos?category=ofertas&clearance=true",
+        },
       ],
     },
-  ]
+  ];
+
+  if (pathname.includes("/admin")) {
+    return null;
+  }
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-[#E7E5E4] bg-[#F8F7F4]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F8F7F4]/90 shadow-lg">
+      <header className="sticky top-0 z-50 h-[80px] w-full border-b border-[#E7E5E4] bg-[#F8F7F4]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F8F7F4]/90 shadow-lg">
         <div className="container mx-auto px-4">
-          <div className="relative flex h-20 items-center">
+          <div className=" flex h-20 items-center">
             {/* Left Section - Logo and Admin Button */}
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-lg transform transition-transform hover:scale-105">
                   <span className="text-white text-xl font-bold">S</span>
                 </div>
-                <span className="text-[#0B1220] text-2xl font-bold tracking-tight">StyleHub</span>
+                <span className="text-[#0B1220] text-2xl font-bold tracking-tight">
+                  StyleHub
+                </span>
               </Link>
 
               {user && isAdmin && (
@@ -307,7 +385,7 @@ export function Navbar() {
                           "absolute left-1/2 top-full z-50 mt-3 w-72 -translate-x-1/2 transform rounded-2xl border border-[#E7E5E4] bg-white/95 backdrop-blur-md shadow-2xl transition-all duration-300",
                           hoveredCategory === category.name
                             ? "visible translate-y-0 opacity-100"
-                            : "invisible translate-y-2 opacity-0",
+                            : "invisible translate-y-2 opacity-0"
                         )}
                       >
                         <div className="p-6">
@@ -349,7 +427,10 @@ export function Navbar() {
 
             {/* Right Section - Search, User, Cart */}
             <div className="flex flex-1 items-center justify-end space-x-4">
-              <div className="hidden items-center transition-all duration-300 ease-in-out md:flex" ref={searchRef}>
+              <div
+                className="hidden items-center transition-all duration-300 ease-in-out md:flex"
+                ref={searchRef}
+              >
                 <form onSubmit={handleSearch} className="relative">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
@@ -357,20 +438,23 @@ export function Navbar() {
                       placeholder="Buscar productos..."
                       className={cn(
                         "rounded-xl border-[#E7E5E4] bg-white pl-10 pr-4 py-3 text-[#0B1220] placeholder:text-[#6B7280] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A] shadow-sm",
-                        isSearchFocused ? "w-80" : "w-52",
+                        isSearchFocused ? "w-80" : "w-52"
                       )}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onFocus={() => {
-                        setIsSearchFocused(true)
-                        if (searchQuery.length >= 2 || recentSearches.length > 0) {
-                          setShowSuggestions(true)
+                        setIsSearchFocused(true);
+                        if (
+                          searchQuery.length >= 2 ||
+                          recentSearches.length > 0
+                        ) {
+                          setShowSuggestions(true);
                         }
                       }}
                       onBlur={() => {
                         setTimeout(() => {
-                          if (!showSuggestions) setIsSearchFocused(false)
-                        }, 150)
+                          if (!showSuggestions) setIsSearchFocused(false);
+                        }, 150);
                       }}
                     />
 
@@ -389,7 +473,9 @@ export function Navbar() {
                                 <button
                                   key={index}
                                   className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-4 py-3 text-left transition-all duration-200 hover:border-[#D6C6B2] hover:bg-[#D6C6B2]/20"
-                                  onClick={() => handleSuggestionClick(suggestion)}
+                                  onClick={() =>
+                                    handleSuggestionClick(suggestion)
+                                  }
                                 >
                                   <div className="flex-shrink-0">
                                     {suggestion.type === "product" ? (
@@ -405,7 +491,9 @@ export function Navbar() {
                                   </div>
                                   <div className="flex-shrink-0">
                                     <span className="rounded-full px-3 py-1 text-xs font-medium text-[#6B7280] bg-[#F8F7F4] group-hover:bg-[#D6C6B2]/30 group-hover:text-[#0B1220] transition-all duration-200">
-                                      {suggestion.type === "product" ? "Producto" : "Categoría"}
+                                      {suggestion.type === "product"
+                                        ? "Producto"
+                                        : "Categoría"}
                                     </span>
                                   </div>
                                 </button>
@@ -429,9 +517,11 @@ export function Navbar() {
                                     key={index}
                                     className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-4 py-3 transition-all duration-200 hover:border-[#E7E5E4] hover:bg-white/60 hover:shadow-sm"
                                     onClick={() => {
-                                      setSearchQuery(search)
-                                      setShowSuggestions(false)
-                                      router.push(`/productos?search=${encodeURIComponent(search)}`)
+                                      setSearchQuery(search);
+                                      setShowSuggestions(false);
+                                      router.push(
+                                        `/productos?search=${encodeURIComponent(search)}`
+                                      );
                                     }}
                                   >
                                     <div className="flex-shrink-0">
@@ -451,15 +541,21 @@ export function Navbar() {
                           </div>
                         )}
 
-                        {suggestions.length === 0 && recentSearches.length === 0 && searchQuery.length >= 2 && (
-                          <div className="p-8 text-center">
-                            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm">
-                              <Search className="h-5 w-5 text-[#6B7280]" />
+                        {suggestions.length === 0 &&
+                          recentSearches.length === 0 &&
+                          searchQuery.length >= 2 && (
+                            <div className="p-8 text-center">
+                              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm">
+                                <Search className="h-5 w-5 text-[#6B7280]" />
+                              </div>
+                              <p className="mb-1 text-sm font-medium text-[#6B7280]">
+                                No se encontraron sugerencias
+                              </p>
+                              <p className="text-xs text-[#6B7280]">
+                                Intenta con otros términos de búsqueda
+                              </p>
                             </div>
-                            <p className="mb-1 text-sm font-medium text-[#6B7280]">No se encontraron sugerencias</p>
-                            <p className="text-xs text-[#6B7280]">Intenta con otros términos de búsqueda</p>
-                          </div>
-                        )}
+                          )}
                       </div>
                     )}
                   </div>
@@ -490,8 +586,13 @@ export function Navbar() {
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56 border-[#E7E5E4] bg-white shadow-xl rounded-xl" align="end">
-                      <DropdownMenuLabel className="text-[#0B1220] font-semibold">Mi Cuenta</DropdownMenuLabel>
+                    <DropdownMenuContent
+                      className="w-56 border-[#E7E5E4] bg-white shadow-xl rounded-xl"
+                      align="end"
+                    >
+                      <DropdownMenuLabel className="text-[#0B1220] font-semibold">
+                        Mi Cuenta
+                      </DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-[#E7E5E4]" />
                       {isAdmin && (
                         <>
@@ -560,7 +661,10 @@ export function Navbar() {
                       <Menu className="h-5 w-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-80 border-l-[#E7E5E4] bg-[#F8F7F4]">
+                  <SheetContent
+                    side="right"
+                    className="w-80 border-l-[#E7E5E4] bg-[#F8F7F4]"
+                  >
                     <div className="mt-8 flex flex-col space-y-6">
                       {/* Mobile Search */}
                       <div className="md:hidden">
@@ -649,5 +753,5 @@ export function Navbar() {
       </header>
       <Cart />
     </>
-  )
+  );
 }
