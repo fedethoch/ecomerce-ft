@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react";
 import { Eye, Edit, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,12 +10,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SearchFilterBar } from "@/components/admin/search-filter-bar";
 import { useCustomers } from "@/hooks/use-customers";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminLayout } from "@/context/layout-context";
 
-export function CustomersView() {
+export default function CustomersView() {
   const { customers, loading, error, refetch } = useCustomers();
-
+  const { open } = useAdminLayout();
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <p className="text-muted-foreground">Gestiona tu base de clientes</p>

@@ -17,13 +17,15 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MetricCard } from "@/components/admin/metric-card";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useAdminLayout } from "@/context/layout-context";
+
 
 export default function DashboardView() {
   const { stats, loading, error } = useDashboardStats();
-
+  const { open } = useAdminLayout();
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Cargando datos...</p>
@@ -34,7 +36,7 @@ export default function DashboardView() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-destructive">{error}</p>
@@ -46,7 +48,7 @@ export default function DashboardView() {
   // Manejar caso donde stats es null/undefined
   if (!stats) {
     return (
-      <div className="space-y-6">
+      <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-destructive">
@@ -58,7 +60,7 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="space-y-6 absolute p-8 left-64 w-[calc(100%-16rem)]">
+    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">

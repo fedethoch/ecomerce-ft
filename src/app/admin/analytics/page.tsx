@@ -1,10 +1,15 @@
 import { TrendingUp, DollarSign, Users, Package, BarChart3 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricCard } from "@/components/admin/metric-card"
+import { useAdminLayout } from "@/context/layout-context";
+
 
 export function AnalyticsView() {
+  const { open } = useAdminLayout();
+
+
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
         <p className="text-muted-foreground">Analiza el rendimiento de tu tienda</p>

@@ -3,21 +3,23 @@
 import { useState } from "react"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AppSidebar } from "./app-sidebar"
-import { DashboardView } from "./views/dashboard-view"
-import { ProductsView } from "./views/products-view"
-import { CreateProductView } from "./views/create-product"
-import { EditProductView } from "./views/edit-product" // Nuevo componente
-import { OrdersView } from "./views/orders-view"
-import { CustomersView } from "./views/customer-view"
-import { AnalyticsView } from "./views/analytics-view"
-import { SettingsView } from "./views/setting-view"
+import { AppSidebar } from "@/components/admin/app-sidebar"
+import { DashboardView } from "@/components/admin/views/dashboard-view"
+import { ProductsView } from "@/components/admin/views/products-view"
+import { CreateProductView } from "@/components/admin/views/create-product"
+import { EditProductView } from "@/components/admin/views/edit-product"
+import { OrdersView } from "@/components/admin/views/orders-view"
+import { CustomersView } from "@/components/admin/views/customer-view"
+import { AnalyticsView } from "@/components/admin/views/analytics-view"
+import { SettingsView } from "@/components/admin/views/setting-view"
+import { useAdminLayout } from "@/context/layout-context"
 
-export function AdminDashboard() {
+
+export default function AdminDashboard() {
   const [activeView, setActiveView] = useState("dashboard")
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
-  
+  const {open} = useAdminLayout();
   const handleSetActiveView = (view: string, productId?: string) => {
     setActiveView(view)
     setSelectedProductId(productId || null)
@@ -52,14 +54,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] w-full bg-background relative">
-      <AppSidebar
-        activeView={activeView}
-        setActiveView={handleSetActiveView}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
+    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
       {/* Contenido principal que se ajusta dinámicamente */}
       <div
         className={`top-16 flex-1 flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? "ml-64" : "ml-16"}`}

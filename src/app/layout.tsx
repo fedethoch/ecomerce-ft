@@ -26,6 +26,7 @@ export default function RootLayout({
       <body className={inter.className}>
         
         <div className="min-h-screen flex flex-col">
+          
           <CartProvider>
             <Navbar />
             <Cart  />
