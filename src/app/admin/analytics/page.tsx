@@ -1,24 +1,39 @@
-import { TrendingUp, DollarSign, Users, Package, BarChart3 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetricCard } from "@/components/admin/metric-card"
-import { useAdminLayout } from "@/context/layout-context";
+"use client";
 
 
-export function AnalyticsView() {
+export default function AnalyticsView() {
   const { open } = useAdminLayout();
 
-
   return (
-    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
+    <div
+      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+    >
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground">Analiza el rendimiento de tu tienda</p>
+        <p className="text-muted-foreground">
+          Analiza el rendimiento de tu tienda
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard title="Conversión" value="3.2%" change="+0.5% desde el mes pasado" icon={TrendingUp} />
-        <MetricCard title="Ticket Promedio" value="$89.50" change="+12% desde el mes pasado" icon={DollarSign} />
-        <MetricCard title="Visitantes" value="12,234" change="+8% desde el mes pasado" icon={Users} />
+        <MetricCard
+          title="Conversión"
+          value="3.2%"
+          change="+0.5% desde el mes pasado"
+          icon={TrendingUp}
+        />
+        <MetricCard
+          title="Ticket Promedio"
+          value="$89.50"
+          change="+12% desde el mes pasado"
+          icon={DollarSign}
+        />
+        <MetricCard
+          title="Visitantes"
+          value="12,234"
+          change="+8% desde el mes pasado"
+          icon={Users}
+        />
         <MetricCard
           title="Productos Más Vendidos"
           value="Camisetas"
@@ -52,5 +67,5 @@ export function AnalyticsView() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

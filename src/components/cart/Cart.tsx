@@ -5,28 +5,46 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cart-context";
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Cart() {
-    const {
-        cart,
-        isOpen,
-        setIsOpen,
-        removeItem,
-        updateQuantity,
-    } = useCart();
+  const { cart, isOpen, setIsOpen, removeItem, updateQuantity } = useCart();
 
-  if (!isOpen) return null;
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsVisible(true);
+      // Small delay to trigger the animation after the element is rendered
+      setTimeout(() => setIsAnimating(true), 10);
+    } else if (isVisible) {
+      setIsAnimating(false);
+      // Wait for animation to complete before hiding
+      setTimeout(() => setIsVisible(false), 300);
+    }
+  }, [isOpen, isVisible]);
+
+  const closeCart = () => {
+    setIsOpen(false);
+  };
+
+  if (!isVisible) return null;
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-50"
-        onClick={() => setIsOpen(false)}
+        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
+          isAnimating ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={closeCart}
       />
 
-      {/* Cart Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 slide-in-right shadow-2xl">
+      <div
+        className={`fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+          isAnimating ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -37,7 +55,7 @@ export default function Cart() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsOpen(false)}
+              onClick={closeCart}
               className="text-gray-500 hover:text-gray-700"
             >
               <X className="h-5 w-5" />
@@ -121,10 +139,13 @@ export default function Cart() {
                   Total:
                 </span>
                 <span className="text-lg font-bold text-gray-900">
-                  ${cart.reduce((acc, item) => acc + item.price * item.quantity, 0).toFixed(2)}
+                  $
+                  {cart
+                    .reduce((acc, item) => acc + item.price * item.quantity, 0)
+                    .toFixed(2)}
                 </span>
               </div>
-              <Link href="/checkout" onClick={() => setIsOpen(false)}>
+              <Link href="/checkout" onClick={closeCart}>
                 <Button className="w-full coffee-gradient text-white hover:opacity-90 transition-opacity">
                   Proceed to Checkout
                 </Button>
