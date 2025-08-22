@@ -347,16 +347,6 @@ export function Navbar() {
                   StyleHub
                 </span>
               </Link>
-
-              {user && isAdmin && (
-                <Button
-                  onClick={() => router.push("/admin")}
-                  className="hidden md:flex items-center gap-2 bg-[#8B1E3F] hover:bg-[#711732] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span>Admin</span>
-                </Button>
-              )}
             </div>
 
             {/* Center Section - Categories */}
@@ -597,7 +587,7 @@ export function Navbar() {
                       {isAdmin && (
                         <>
                           <DropdownMenuItem
-                            onClick={() => router.push("/admin")}
+                            onClick={() => router.push("/admin/dashboard")}
                             className="text-[#8B1E3F] hover:bg-[#8B1E3F]/10 hover:text-[#711732] focus:bg-[#8B1E3F]/10 font-medium"
                           >
                             <Settings className="mr-2 h-4 w-4" />
@@ -711,7 +701,7 @@ export function Navbar() {
                             {isAdmin && (
                               <Button
                                 className="w-full bg-[#8B1E3F] hover:bg-[#711732] text-white font-semibold rounded-xl py-3 transition-all duration-200"
-                                onClick={() => router.push("/admin")}
+                                onClick={() => router.push("/admin/dashboard")}
                               >
                                 <Settings className="mr-2 h-4 w-4" />
                                 Panel Admin

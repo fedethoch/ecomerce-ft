@@ -1,7 +1,7 @@
-import { ProductGallery } from "@/components/product/product-gallery"
-import { ProductInfo } from "@/components/product/product-info"
-import { ProductTabs } from "@/components/product/product-tabs"
-import { RelatedProducts } from "@/components/product/related-products"
+import { ProductGallery } from "@/components/product/product-gallery";
+import { ProductInfo } from "@/components/product/product-info";
+import { ProductTabs } from "@/components/product/product-tabs";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,13 +9,18 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { notFound } from "next/navigation"
-import { getProductById, getRelatedProducts, getAllProductIds } from "@/lib/supabase/product-actions"
+} from "@/components/ui/breadcrumb";
+import { notFound } from "next/navigation";
+import {
+  getProductById,
+  getRelatedProducts,
+  getAllProductIds,
+} from "@/lib/supabase/product-actions";
 import { getAllProductIdsSSG } from "@/lib/supabase/product-actions";
-import { getProduct } from "@/controllers/products-controller"
-import { AppActionError } from "@/types/types"
-import { ProductType } from "@/types/products/products"
+import { getProduct } from "@/controllers/products-controller";
+import { AppActionError } from "@/types/types";
+import { ProductType } from "@/types/products/products";
+import ProductCarrousel from "@/components/home/products-carrousel";
 
 // Type guard para saber si es ProductType
 function isProductType(obj: any): obj is ProductType {
@@ -24,8 +29,8 @@ function isProductType(obj: any): obj is ProductType {
 
 interface ProductPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -37,9 +42,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const images = product.imagePaths; 
+  const images = product.imagePaths;
   // Obtener productos relacionados
-  const relatedProducts = await getRelatedProducts(product.category, product.id);
+  const relatedProducts = await getRelatedProducts(
+    product.category,
+    product.id
+  );
 
   // Mock de datos adicionales que podrías querer almacenar en Supabase después
   const productDetails = {
@@ -80,14 +88,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
         date: "2024-01-08",
       },
     ],
-  }
+  };
 
   const breadcrumbItems = [
     { label: "Inicio", href: "/" },
     { label: "Productos", href: "/productos" },
-    { label: product.category, href: `/productos?category=${product.category}` },
+    {
+      label: product.category,
+      href: `/productos?category=${product.category}`,
+    },
     { label: product.name, href: `/productos/${product.id}` },
-  ]
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -115,7 +126,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
           {/* Product Gallery */}
           <div className="lg:sticky lg:top-4">
-            <ProductGallery images={productDetails.images} productName={product.name} />
+            <ProductGallery
+              images={productDetails.images}
+              productName={product.name}
+            />
           </div>
 
           {/* Product Info */}
@@ -128,12 +142,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductTabs product={productDetails} />
 
         {/* Related Products */}
-        <RelatedProducts
-          currentProductId={product.id} 
-          category={product.category}  />
       </div>
+      <ProductCarrousel products={relatedProducts} />
     </div>
-  )
+  );
 }
 
 export async function generateStaticParams() {
@@ -142,7 +154,7 @@ export async function generateStaticParams() {
     const products = await getAllProductIdsSSG();
     return products.map((product) => ({
       id: product.id,
-    }))
+    }));
   } catch (error) {
     console.error("Error generando rutas estáticas:", error);
     return [];

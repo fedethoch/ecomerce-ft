@@ -23,6 +23,7 @@ export default function Cart() {
       // Wait for animation to complete before hiding
       setTimeout(() => setIsVisible(false), 300);
     }
+    console.log(cart);
   }, [isOpen, isVisible]);
 
   const closeCart = () => {
@@ -78,7 +79,12 @@ export default function Cart() {
                     className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                   >
                     <Image
-                      src={item.imagePaths?.[0] || "/placeholder.svg"}
+                      src={
+                        Array.isArray(item.imagePaths) &&
+                        item.imagePaths.length > 0
+                          ? item.imagePaths[0]
+                          : "/placeholder.svg"
+                      }
                       alt={item.name}
                       width={60}
                       height={60}

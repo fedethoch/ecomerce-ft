@@ -1,61 +1,96 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 interface ProductFiltersProps {
-  onFilterChange: (filters: any) => void
+  onFilterChange: (filters: any) => void;
+  initialFilters?: {
+    category?: string;
+    priceRange?: number[];
+    sizes?: string[];
+  };
 }
 
-export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
+export function ProductFilters({
+  onFilterChange,
+  initialFilters,
+}: ProductFiltersProps) {
   const [filters, setFilters] = useState({
     category: "all",
     priceRange: [0, 100000],
     sizes: [] as string[],
-  })
+  });
+
+  // Apply initial filters from props when provided
+  useEffect(() => {
+    if (initialFilters) {
+      setFilters((prev) => ({
+        ...prev,
+        ...(initialFilters.category
+          ? { category: initialFilters.category }
+          : {}),
+        ...(initialFilters.priceRange
+          ? { priceRange: initialFilters.priceRange }
+          : {}),
+        ...(initialFilters.sizes ? { sizes: initialFilters.sizes } : {}),
+      }));
+      onFilterChange({
+        category: initialFilters.category ?? "all",
+        priceRange: initialFilters.priceRange ?? [0, 100000],
+        sizes: initialFilters.sizes ?? [],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const categories = [
     { id: "all", label: "Todas las categorías" },
-    { id: "hombre", label: "Hombre" },
-    { id: "mujer", label: "Mujer" },
+    { id: "camisetas", label: "Camisetas" },
+    { id: "pantalones", label: "Pantalones" },
+    { id: "vestidos", label: "Vestidos" },
+    { id: "chaquetas", label: "Chaquetas" },
+    { id: "calzado", label: "Calzado" },
     { id: "accesorios", label: "Accesorios" },
-  ]
+  ];
 
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"]
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
   const handleCategoryChange = (category: string) => {
-    const newFilters = { ...filters, category }
-    setFilters(newFilters)
-    onFilterChange(newFilters)
-  }
+    const newFilters = { ...filters, category };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
 
   const handlePriceChange = (value: number[]) => {
-    const newFilters = { ...filters, priceRange: value }
-    setFilters(newFilters)
-    onFilterChange(newFilters)
-  }
+    const newFilters = { ...filters, priceRange: value };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
 
   const handleSizeChange = (size: string, checked: boolean) => {
-    const newSizes = checked ? [...filters.sizes, size] : filters.sizes.filter((s) => s !== size)
-    const newFilters = { ...filters, sizes: newSizes }
-    setFilters(newFilters)
-    onFilterChange(newFilters)
-  }
+    const newSizes = checked
+      ? [...filters.sizes, size]
+      : filters.sizes.filter((s) => s !== size);
+    const newFilters = { ...filters, sizes: newSizes };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
 
   const clearFilters = () => {
     const newFilters = {
       category: "all",
       priceRange: [0, 100000],
       sizes: [],
-    }
-    setFilters(newFilters)
-    onFilterChange(newFilters)
-  }
+    };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
 
   return (
     <Card className="sticky top-4">
@@ -117,7 +152,9 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
                 <Checkbox
                   id={size}
                   checked={filters.sizes.includes(size)}
-                  onCheckedChange={(checked) => handleSizeChange(size, checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    handleSizeChange(size, checked as boolean)
+                  }
                 />
                 <Label htmlFor={size} className="text-sm">
                   {size}
@@ -128,5 +165,5 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

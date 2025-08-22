@@ -1,66 +1,86 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { useCart } from "@/context/cart-context"
-import { Heart, ShoppingCart, Share2, Truck, Shield, RotateCcw, Star } from "lucide-react"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/context/cart-context";
+import {
+  Heart,
+  ShoppingCart,
+  Share2,
+  Truck,
+  Shield,
+  RotateCcw,
+  Star,
+} from "lucide-react";
 
-interface ProductInfoProps {
-  product: {
-    id: string
-    name: string
-    price: number
-    originalPrice?: number
-    category: string
-    description: string
-    sizes: string[]
-    stock: number
-    isNew?: boolean
-    isSale?: boolean
-    features: string[]
-    reviews: Array<{
-      id: string
-      user: string
-      rating: number
-      comment: string
-      date: string
-    }>
-  }
-}
+import { ProductType } from "@/types/products/products";
 
-export function ProductInfo({ product }: ProductInfoProps) {
-  const [selectedSize, setSelectedSize] = useState("")
-  const [quantity, setQuantity] = useState(1)
-  const [isLiked, setIsLiked] = useState(false)
-  const { addItem } = useCart()
+export function ProductInfo({ product }: { product: ProductType }) {
+  const [selectedSize, setSelectedSize] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [isLiked, setIsLiked] = useState(false);
+  const { addItem, cart } = useCart();
 
-  const averageRating = product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
+  // How many of this product are already in the cart
+  const existingInCart = Array.isArray(cart)
+    ? (cart.find((p) => p.id === product.id)?.quantity ?? 0)
+    : 0;
+  const remainingStock = Math.max(0, (product.quantity ?? 0) - existingInCart);
+
+  // Keep selected quantity within allowed range when remainingStock changes
+  useEffect(() => {
+    if (remainingStock <= 0) {
+      setQuantity(1);
+    } else if (quantity > remainingStock) {
+      setQuantity(Math.max(1, remainingStock));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingStock]);
+
+  // Safe accessors for optional fields
+  const reviews = Array.isArray((product as any).reviews)
+    ? (product as any).reviews
+    : [];
+  const features = Array.isArray((product as any).features)
+    ? (product as any).features
+    : [];
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) /
+        reviews.length
+      : 0;
+
   const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0
+    ? Math.round(
+        ((product.originalPrice - product.price) / product.originalPrice) * 100
+      )
+    : 0;
 
-  const handleaddItem = () => {
+  const handleAddItem = () => {
     if (!selectedSize) {
-      alert("Por favor selecciona una talla")
-      return
+      alert("Por favor selecciona una talla");
+      return;
     }
 
-    for (let i = 0; i < quantity; i++) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: "/placeholder.svg?height=400&width=300",
-      })
+    if (remainingStock <= 0) {
+      alert("No hay stock disponible para este producto");
+      return;
     }
-  }
+
+    const qtyToAdd = Math.min(quantity, remainingStock);
+    const mainImage =
+      Array.isArray(product.imagePaths) && product.imagePaths.length > 0
+        ? product.imagePaths[0]
+        : "/placeholder.svg";
+
+    // addItem expects a product-like object; ensure imagePaths is an array with the main image and pass quantity once
+    addItem({ ...product, quantity: qtyToAdd, imagePaths: [mainImage] });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Product Title and Badges */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           {product.isNew && <Badge className="bg-green-500">Nuevo</Badge>}
@@ -71,7 +91,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
 
-        {/* Rating */}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (
@@ -82,15 +101,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
             ))}
           </div>
           <span className="text-sm text-muted-foreground">
-            {averageRating.toFixed(1)} ({product.reviews.length} reseñas)
+            {averageRating.toFixed(1)} ({reviews.length} reseñas)
           </span>
         </div>
       </div>
 
-      {/* Price */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold">${product.price.toLocaleString()}</span>
+          <span className="text-3xl font-bold">
+            ${product.price.toLocaleString()}
+          </span>
           {product.originalPrice && (
             <>
               <span className="text-xl text-muted-foreground line-through">
@@ -100,22 +120,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
             </>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">Precio final con todos los impuestos incluidos</p>
+        <p className="text-sm text-muted-foreground">
+          Precio final con todos los impuestos incluidos
+        </p>
       </div>
 
       <Separator />
 
-      {/* Description */}
       <div>
         <h3 className="font-semibold mb-2">Descripción</h3>
-        <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+        <p className="text-muted-foreground leading-relaxed">
+          {product.description}
+        </p>
       </div>
 
-      {/* Features */}
       <div>
         <h3 className="font-semibold mb-3">Características</h3>
         <ul className="space-y-2">
-          {product.features.map((feature, index) => (
+          {features.map((feature: any, index: number) => (
             <li key={index} className="flex items-center gap-2 text-sm">
               <div className="w-1.5 h-1.5 bg-primary rounded-full" />
               {feature}
@@ -126,7 +148,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       <Separator />
 
-      {/* Size Selection */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Talla</h3>
@@ -135,7 +156,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           </Button>
         </div>
         <div className="grid grid-cols-4 gap-2">
-          {product.sizes.map((size) => (
+          {(product.sizes ?? []).map((size) => (
             <Button
               key={size}
               variant={selectedSize === size ? "default" : "outline"}
@@ -148,7 +169,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       </div>
 
-      {/* Quantity */}
       <div>
         <h3 className="font-semibold mb-3">Cantidad</h3>
         <div className="flex items-center gap-3">
@@ -157,7 +177,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
               variant="ghost"
               size="icon"
               className="h-10 w-10"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              disabled={quantity <= 1}
             >
               -
             </Button>
@@ -166,26 +187,40 @@ export function ProductInfo({ product }: ProductInfoProps) {
               variant="ghost"
               size="icon"
               className="h-10 w-10"
-              onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+              onClick={() =>
+                setQuantity((q) => Math.min(remainingStock, q + 1))
+              }
+              disabled={quantity >= remainingStock}
             >
               +
             </Button>
           </div>
-          <span className="text-sm text-muted-foreground">Stock disponible: {product.stock}</span>
+          <span className="text-sm text-muted-foreground">
+            Stock disponible: {remainingStock}
+          </span>
         </div>
       </div>
 
       <Separator />
 
-      {/* Action Buttons */}
       <div className="space-y-4">
         <div className="flex gap-3">
-          <Button onClick={handleaddItem} size="lg" className="flex-1">
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            Agregar al Carrito
+          <Button
+            onClick={handleAddItem}
+            size="lg"
+            className="flex-1"
+            disabled={!selectedSize || remainingStock <= 0 || quantity <= 0}
+          >
+            <ShoppingCart className="w-5 h-5 mr-2" /> Agregar al Carrito
           </Button>
-          <Button variant="outline" size="lg" onClick={() => setIsLiked(!isLiked)}>
-            <Heart className={`w-5 h-5 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setIsLiked(!isLiked)}
+          >
+            <Heart
+              className={`w-5 h-5 ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+            />
           </Button>
           <Button variant="outline" size="lg">
             <Share2 className="w-5 h-5" />
@@ -197,21 +232,20 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </Button>
       </div>
 
-      {/* Benefits */}
       <div className="space-y-3 pt-4 border-t">
         <div className="flex items-center gap-3 text-sm">
-          <Truck className="h-5 w-5 text-primary" />
+          <Truck className="h-5 w-5 text-primary" />{" "}
           <span>Envío gratis en compras mayores a $50,000</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <RotateCcw className="h-5 w-5 text-primary" />
+          <RotateCcw className="h-5 w-5 text-primary" />{" "}
           <span>Devolución gratuita hasta 30 días</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <Shield className="h-5 w-5 text-primary" />
+          <Shield className="h-5 w-5 text-primary" />{" "}
           <span>Garantía de calidad</span>
         </div>
       </div>
     </div>
-  )
+  );
 }

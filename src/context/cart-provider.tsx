@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import { ProductType } from "@/types/products/products"
+import { ProductType } from "@/types/products/products";
 import React, { useState, useEffect } from "react";
 import { CartContext } from "./cart-context";
-
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<ProductType[]>([]);
@@ -28,7 +27,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       const exists = prev.find((p) => p.id === item.id);
       if (exists) {
         return prev.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + item.quantity  } : p
+          p.id === item.id ? { ...p, quantity: p.quantity + item.quantity } : p
         );
       }
       return [...prev, item];
@@ -41,9 +40,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateQuantity = (id: string, quantity: number) => {
     setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
     );
   };
 
@@ -51,10 +48,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <CartContext.Provider
-      value={{ cart, addItem, removeItem, updateQuantity, clearCart, isOpen, setIsOpen, isCartReady }}
+      value={{
+        cart,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        isOpen,
+        setIsOpen,
+      }}
     >
       {children}
     </CartContext.Provider>
   );
 };
-
