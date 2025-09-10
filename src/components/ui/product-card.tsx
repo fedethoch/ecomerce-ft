@@ -1,44 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Heart, ShoppingCart } from "lucide-react"
-import { useCart } from "@/context/cart-context"
-import type { ProductType } from "@/types/products/products"
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Heart, ShoppingCart } from "lucide-react";
+import { useCart } from "@/context/cart-context";
+import type { ProductType } from "@/types/products/products";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
-  product: ProductType
+  product: ProductType;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [isLiked, setIsLiked] = useState(false)
-  const { addItem } = useCart()
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();  
-    addItem({
-      ...product,
-      quantity: 1
-    });
-  };
+  const [isLiked, setIsLiked] = useState(false);
+  const router = useRouter();
 
   const handleToggleLike = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsLiked(!isLiked)
-  }
+    e.preventDefault();
+    setIsLiked(!isLiked);
+  };
 
   // Usamos la primera imagen del array imagePaths
   const mainImage =
     Array.isArray(product.imagePaths) && product.imagePaths.length > 0
       ? product.imagePaths[0]
-      : "/placeholder.svg"
+      : "/placeholder.svg";
 
   // Debug: muestra el array y la URL que se usará
-  console.log("imagePaths para producto", product.name, ":", product.imagePaths)
-  console.log("URL usada para", product.name, ":", mainImage)
+  console.log(
+    "imagePaths para producto",
+    product.name,
+    ":",
+    product.imagePaths
+  );
+  console.log("URL usada para", product.name, ":", mainImage);
 
   return (
     <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
@@ -54,8 +52,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {product.isNew && <Badge className="bg-green-500 hover:bg-green-600">Nuevo</Badge>}
-            {product.isSale && <Badge className="bg-red-500 hover:bg-red-600">Oferta</Badge>}
+            {product.isNew && (
+              <Badge className="bg-green-500 hover:bg-green-600">Nuevo</Badge>
+            )}
+            {product.isSale && (
+              <Badge className="bg-red-500 hover:bg-red-600">Oferta</Badge>
+            )}
           </div>
 
           {/* Botón de favoritos */}
@@ -65,17 +67,18 @@ export function ProductCard({ product }: ProductCardProps) {
             className="absolute top-2 right-2 bg-white/80 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             onClick={handleToggleLike}
           >
-            <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+            <Heart
+              className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+            />
           </Button>
 
           {/* Botón rápido para añadir al carrito */}
           <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <Button 
-              className="w-full bg-white text-black hover:bg-gray-100 z-10" 
-              onClick={handleAddToCart}
+            <Button
+              className="w-full bg-white text-black hover:bg-gray-100 z-10"
+              onClick={() => router.push(`/productos/${product.id}`)}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Agregar al carrito
+              Ver Producto
             </Button>
           </div>
         </div>
@@ -94,7 +97,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="font-bold text-lg">
               ${product.price.toLocaleString("es-AR")}
             </span>
-            
+
             {/* Mostrar precio original si hay oferta */}
             {product.isSale && product.originalPrice && (
               <span className="text-sm text-muted-foreground line-through">
@@ -102,12 +105,12 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
-          
+
           {/* Tallas disponibles */}
           {product.sizes && product.sizes.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {product.sizes.map((size) => (
-                <span 
+                <span
                   key={size}
                   className="text-xs border border-gray-200 px-2 py-1 rounded"
                 >
@@ -119,5 +122,5 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
       </div>
     </div>
-  )
+  );
 }

@@ -143,7 +143,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         {/* Related Products */}
       </div>
-      <ProductCarrousel products={relatedProducts} />
     </div>
   );
 }

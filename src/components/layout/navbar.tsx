@@ -428,7 +428,7 @@ export function Navbar() {
                       placeholder="Buscar productos..."
                       className={cn(
                         "rounded-xl border-[#E7E5E4] bg-white pl-10 pr-4 py-3 text-[#0B1220] placeholder:text-[#6B7280] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A] shadow-sm",
-                        isSearchFocused ? "w-80" : "w-52"
+                        isSearchFocused ? "w-70" : "w-52"
                       )}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}

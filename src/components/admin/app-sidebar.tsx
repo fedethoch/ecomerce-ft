@@ -117,7 +117,7 @@ export function AppSidebar() {
     <TooltipProvider delayDuration={0}>
       <div
         className={cn(
-          "fixed left-0 bg-background border-r flex flex-col justify-between z-40 transition-all duration-300 ease-in-out h-full top-0",
+          "fixed left-0 bg-white border-r flex flex-col justify-between z-40 transition-all duration-300 ease-in-out h-full top-0",
           open ? "w-64" : "w-16"
         )}
       >
@@ -202,64 +202,6 @@ export function AppSidebar() {
                 </Tooltip>
               ))}
             </div>
-          </div>
-
-          {/* Footer con usuario */}
-          <div className="p-4 border-t">
-            <DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "transition-all duration-200 hover:bg-accent",
-                        open
-                          ? "w-full justify-start gap-3 h-12"
-                          : "w-10 h-10 justify-center p-0"
-                      )}
-                    >
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarImage
-                          src="/placeholder.svg?height=32&width=32"
-                          alt="Admin"
-                        />
-                        <AvatarFallback>AD</AvatarFallback>
-                      </Avatar>
-                      {open && (
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                          <span className="truncate font-semibold">Admin</span>
-                          <span className="truncate text-xs text-muted-foreground">
-                            admin@fashionstore.com
-                          </span>
-                        </div>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                {!open && <TooltipContent side="right">Admin</TooltipContent>}
-              </Tooltip>
-              <DropdownMenuContent
-                className="w-56"
-                side="top"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
-                  Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configuración
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Cerrar Sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>

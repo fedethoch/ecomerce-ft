@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import Image from "next/image"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 export function OrderSummary() {
   // Mock cart items
@@ -19,11 +19,14 @@ export function OrderSummary() {
       quantity: 1,
       image: "/placeholder.svg?height=80&width=80",
     },
-  ]
+  ];
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = 5000
-  const total = subtotal + shipping
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const shipping = 5000;
+  const total = subtotal + shipping;
 
   return (
     <Card className="sticky top-4">
@@ -34,13 +37,22 @@ export function OrderSummary() {
         {cartItems.map((item) => (
           <div key={item.id} className="flex items-center space-x-3">
             <div className="relative w-16 h-16 rounded-md overflow-hidden">
-              <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+              <Image
+                src={item.image || "/placeholder.svg"}
+                alt={item.name}
+                fill
+                className="object-cover"
+              />
             </div>
             <div className="flex-1">
               <h4 className="font-medium text-sm">{item.name}</h4>
-              <p className="text-sm text-muted-foreground">Cantidad: {item.quantity}</p>
+              <p className="text-sm text-muted-foreground">
+                Cantidad: {item.quantity}
+              </p>
             </div>
-            <span className="font-medium">${(item.price * item.quantity).toLocaleString()}</span>
+            <span className="font-medium">
+              ${(item.price * item.quantity).toLocaleString()}
+            </span>
           </div>
         ))}
 
@@ -63,5 +75,5 @@ export function OrderSummary() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

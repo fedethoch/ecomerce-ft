@@ -27,7 +27,7 @@ export function ProductFilters({
     sizes: [] as string[],
   });
 
-  // Apply initial filters from props when provided
+  // Apply initial filters from props when provided and when they change
   useEffect(() => {
     if (initialFilters) {
       setFilters((prev) => ({
@@ -47,7 +47,7 @@ export function ProductFilters({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialFilters]);
 
   const categories = [
     { id: "all", label: "Todas las categorías" },

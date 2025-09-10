@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ProductFilters } from "@/components/products/product-filters";
 import { ProductList } from "@/components/products/product-list";
 import { ProductPagination } from "@/components/products/product-pagination";
@@ -26,10 +27,15 @@ export default function ProductsPage() {
     startIndex + productsPerPage
   );
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
-    // Read URL search params to prepopulate filters
-    const params = new URLSearchParams(window.location.search);
+    // Read URL search params to prepopulate filters (reactive)
+    const params = searchParams
+      ? searchParams
+      : new URLSearchParams(window.location.search);
     const category = params.get("category") || undefined;
+    const typeParam = params.get("type") || undefined;
     const priceMin = params.get("priceMin");
     const priceMax = params.get("priceMax");
     const sizes = params.get("sizes");
@@ -38,8 +44,34 @@ export default function ProductsPage() {
         ? [Number(priceMin) || 0, Number(priceMax) || 100000]
         : undefined;
     const parsedSizes = sizes ? sizes.split(",") : undefined;
+    // Map `type` values from navbar to the product-filters category ids
+    const typeToFilterCategory: Record<string, string> = {
+      remeras: "camisetas",
+      camisetas: "camisetas",
+      pantalon: "pantalones",
+      pantalones: "pantalones",
+      buzos: "chaquetas",
+      camperas: "chaquetas",
+      chaquetas: "chaquetas",
+      calzado: "calzado",
+      gorras: "accesorios",
+      accesorios: "accesorios",
+      relojes: "accesorios",
+      carteras: "accesorios",
+    };
+
+    const mappedCategoryFromType = typeParam
+      ? (typeToFilterCategory[typeParam.toLowerCase().trim()] ??
+        typeParam.toLowerCase().trim())
+      : undefined;
+
     const parsedInitialFilters = {
-      ...(category ? { category: String(category).toLowerCase().trim() } : {}),
+      // Prefer mapped type-derived category when present (so nav subcategory shows selected in the filter UI)
+      ...(mappedCategoryFromType ? { category: mappedCategoryFromType } : {}),
+      ...// fallback: if the URL directly provides a category that matches a filter id
+      (category && !mappedCategoryFromType
+        ? { category: String(category).toLowerCase().trim() }
+        : {}),
       ...(parsedPriceRange ? { priceRange: parsedPriceRange } : {}),
       ...(parsedSizes ? { sizes: parsedSizes } : {}),
     };
@@ -111,24 +143,45 @@ export default function ProductsPage() {
       }
     };
     fetchProducts();
-  }, []);
+  }, [searchParams?.toString()]);
 
   // Helper: normalize and flexible category matching (includes new categories)
-  const normalize = (s: unknown) => String(s ?? "").toLowerCase().trim();
+  const normalize = (s: unknown) =>
+    String(s ?? "")
+      .toLowerCase()
+      .trim();
 
-  const categoryMatches = (selected: string | undefined | null, prodCat: unknown) => {
+  const categoryMatches = (
+    selected: string | undefined | null,
+    prodCat: unknown
+  ) => {
     const sel = normalize(selected);
     const prod = normalize(prodCat);
     if (!sel || sel === "all") return true;
 
     const variants: Record<string, string[]> = {
-      hombre: ["hombre", "hombres", "man", "men", "masculino", "varon", "varones"],
+      hombre: [
+        "hombre",
+        "hombres",
+        "man",
+        "men",
+        "masculino",
+        "varon",
+        "varones",
+      ],
       mujer: ["mujer", "mujeres", "woman", "women", "femenino"],
       accesorios: ["accesorio", "accesorios", "accessories"],
       camisetas: ["camiseta", "camisetas", "tshirt", "tee", "polera", "remera"],
       pantalones: ["pantalon", "pantalones", "pants", "trousers", "jeans"],
       vestidos: ["vestido", "vestidos", "dress", "dresses"],
-      chaquetas: ["chaqueta", "chaquetas", "jacket", "jackets", "abrigo", "abrigos"],
+      chaquetas: [
+        "chaqueta",
+        "chaquetas",
+        "jacket",
+        "jackets",
+        "abrigo",
+        "abrigos",
+      ],
       calzado: ["calzado", "zapato", "zapatos", "shoes", "footwear"],
     };
 

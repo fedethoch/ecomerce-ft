@@ -1,5 +1,15 @@
 "use client";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MetricCard } from "@/components/ui/metric-card";
+import { useAdminLayout } from "@/context/layout-context";
+import {
+  BarChart3,
+  DollarSign,
+  Package,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
 export default function AnalyticsView() {
   const { open } = useAdminLayout();
