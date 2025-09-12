@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,8 +33,12 @@ import { quoteShipping } from "@/controllers/shipping-controller";
 import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler";
 import { CheckoutSkeleton } from "@/components/skeletons/checkout-skeleton";
 import { useCart } from "@/context/cart-context";
+import {
+  addressSchema,
+  paymentMethodSchema,
+  termsSchema,
+} from "@/lib/validations/PaymentSchema";
 
-// Tipos mínimos para el front
 type ShippingOption = {
   method_id: string;
   label: string;
@@ -149,8 +153,10 @@ const Checkout = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
-  // Dirección y envío
   const [address, setAddress] = useState({
     full_name: "",
     line1: "",
@@ -167,9 +173,15 @@ const Checkout = () => {
   const router = useRouter();
   const { cart } = useCart();
 
-  // Redirección si carrito vacío
+  useEffect(() => {
+    if (cart.length === 0) {
+      setIsRedirecting(true);
+      toast.error("Tu carrito está vacío.");
+      router.push("/productos");
+      return;
+    }
+  }, [cart, router]);
 
-  // Subtotal de productos
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [cart]
@@ -181,7 +193,6 @@ const Checkout = () => {
   const shippingAmount = selectedShipping?.amount ?? 0;
   const total = subtotal + (selectedMethodId ? shippingAmount : 0);
 
-  // Cotizar automáticamente cuando haya provincia + CP
   useEffect(() => {
     const ready = !!address.state && !!address.postal_code && cart.length > 0;
     if (!ready) {
@@ -205,18 +216,71 @@ const Checkout = () => {
       .finally(() => setIsQuoting(false));
   }, [address.state, address.postal_code, cart, address, setIsQuoting]);
 
-  const canProceedToNext = () => {
+  const validateCurrentStep = useCallback((): boolean => {
+    const newErrors: Record<string, string> = {};
+
     switch (currentStep) {
       case 0:
         return cart.length > 0;
       case 1:
-        return (
-          address.full_name &&
-          address.line1 &&
-          address.city &&
-          address.state &&
-          address.postal_code
-        );
+        try {
+          addressSchema.parse(address);
+          return true;
+        } catch (error: any) {
+          error.errors?.forEach((err: any) => {
+            newErrors[err.path[0]] = err.message;
+          });
+          setValidationErrors(newErrors);
+          return false;
+        }
+      case 2:
+        if (!selectedMethodId) {
+          newErrors.shipping = "Debes seleccionar un método de envío";
+          setValidationErrors(newErrors);
+          return false;
+        }
+        return true;
+      case 3:
+        try {
+          paymentMethodSchema.parse({ payment_method: selectedPaymentMethod });
+          return true;
+        } catch (error: any) {
+          newErrors.payment = "Debes seleccionar un método de pago válido";
+          setValidationErrors(newErrors);
+          return false;
+        }
+      case 4:
+        try {
+          termsSchema.parse({ accept_terms: acceptTerms });
+          return true;
+        } catch (error: any) {
+          newErrors.terms = "Debes aceptar los términos y condiciones";
+          setValidationErrors(newErrors);
+          return false;
+        }
+      default:
+        return false;
+    }
+  }, [
+    currentStep,
+    cart.length,
+    address,
+    selectedMethodId,
+    selectedPaymentMethod,
+    acceptTerms,
+  ]);
+
+  const canProceedToNext = useMemo(() => {
+    switch (currentStep) {
+      case 0:
+        return cart.length > 0;
+      case 1:
+        try {
+          addressSchema.parse(address);
+          return true;
+        } catch {
+          return false;
+        }
       case 2:
         return selectedMethodId !== null;
       case 3:
@@ -226,13 +290,27 @@ const Checkout = () => {
       default:
         return false;
     }
-  };
+  }, [
+    currentStep,
+    cart.length,
+    address,
+    selectedMethodId,
+    selectedPaymentMethod,
+    acceptTerms,
+  ]);
+
+  useEffect(() => {
+    setValidationErrors({});
+  }, [currentStep]);
 
   const nextStep = () => {
-    if (currentStep < steps.length - 1 && canProceedToNext()) {
-      setTimeout(() => {
-        setCurrentStep(currentStep + 1);
-      }, 300);
+    if (currentStep < steps.length - 1) {
+      const isValid = validateCurrentStep();
+      if (isValid) {
+        setTimeout(() => {
+          setCurrentStep(currentStep + 1);
+        }, 300);
+      }
     }
   };
 
@@ -245,17 +323,27 @@ const Checkout = () => {
   };
 
   const handleContinuePayment = async () => {
+    const isValid = validateCurrentStep();
+    if (!isValid) {
+      return;
+    }
+
+    try {
+      addressSchema.parse(address);
+      paymentMethodSchema.parse({ payment_method: selectedPaymentMethod });
+      termsSchema.parse({ accept_terms: acceptTerms });
+    } catch (error: any) {
+      toast.error("Por favor, completa todos los campos correctamente");
+      return;
+    }
+
+    if (!selectedMethodId) {
+      toast.warning("Elegí un método de envío");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      if (!acceptTerms) {
-        return toast.warning(
-          "Debes aceptar los términos y condiciones para continuar"
-        );
-      }
-      if (!selectedMethodId) {
-        return toast.warning("Elegí un método de envío");
-      }
-
       const result = await actionErrorHandler(async () => {
         return await createPreference({
           items: cart.map((item) => ({
@@ -273,7 +361,6 @@ const Checkout = () => {
         return;
       }
     } catch (error: any) {
-      // Evitamos instanceof porque cruza el boundary de server actions
       const msg =
         error?.userMessage || error?.message || "No se pudo iniciar el pago";
       toast.error(msg);
@@ -288,7 +375,7 @@ const Checkout = () => {
   if (isRedirecting) return null;
 
   return (
-    <div className="h-[calc(100vh-80px)] bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -302,10 +389,8 @@ const Checkout = () => {
         <StepIndicator steps={steps} currentStep={currentStep} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content - Steps */}
           <div className="lg:col-span-2">
             <div className="relative min-h-[500px] mb-8 overflow-hidden">
-              {/* Step 1: Order Summary - Now empty since it's in sidebar */}
               <StepContent isActive={currentStep === 0}>
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -330,7 +415,6 @@ const Checkout = () => {
                 </Card>
               </StepContent>
 
-              {/* Step 2: Shipping Address */}
               <StepContent isActive={currentStep === 1}>
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -342,7 +426,11 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label className="text-sm">Nombre completo</Label>
                         <input
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                            validationErrors.full_name
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.full_name}
                           onChange={(e) =>
                             setAddress((a) => ({
@@ -352,44 +440,80 @@ const Checkout = () => {
                           }
                           placeholder="Tu nombre"
                         />
+                        {validationErrors.full_name && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.full_name}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Teléfono</Label>
                         <input
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                            validationErrors.phone
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.phone}
                           onChange={(e) =>
                             setAddress((a) => ({ ...a, phone: e.target.value }))
                           }
                           placeholder="+54 11 ..."
                         />
+                        {validationErrors.phone && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.phone}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <Label className="text-sm">Dirección</Label>
                         <input
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                            validationErrors.line1
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.line1}
                           onChange={(e) =>
                             setAddress((a) => ({ ...a, line1: e.target.value }))
                           }
                           placeholder="Calle 123, piso/depto"
                         />
+                        {validationErrors.line1 && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.line1}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Ciudad</Label>
                         <input
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                            validationErrors.city
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.city}
                           onChange={(e) =>
                             setAddress((a) => ({ ...a, city: e.target.value }))
                           }
                           placeholder="Ciudad"
                         />
+                        {validationErrors.city && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.city}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Provincia</Label>
                         <select
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm bg-white focus:outline-none ${
+                            validationErrors.state
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.state}
                           onChange={(e) =>
                             setAddress((a) => ({ ...a, state: e.target.value }))
@@ -402,11 +526,20 @@ const Checkout = () => {
                             </option>
                           ))}
                         </select>
+                        {validationErrors.state && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.state}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm">Código postal</Label>
                         <input
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                            validationErrors.postal_code
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                           value={address.postal_code}
                           onChange={(e) =>
                             setAddress((a) => ({
@@ -416,13 +549,17 @@ const Checkout = () => {
                           }
                           placeholder="Ej: 1425"
                         />
+                        {validationErrors.postal_code && (
+                          <p className="text-xs text-red-500">
+                            {validationErrors.postal_code}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </StepContent>
 
-              {/* Step 3: Shipping Method */}
               <StepContent isActive={currentStep === 2}>
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -430,6 +567,13 @@ const Checkout = () => {
                       <Truck className="w-5 h-5" />
                       Método de envío
                     </h2>
+                    {validationErrors.shipping && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600">
+                          {validationErrors.shipping}
+                        </p>
+                      </div>
+                    )}
                     {isQuoting ? (
                       <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -480,7 +624,6 @@ const Checkout = () => {
                 </Card>
               </StepContent>
 
-              {/* Step 4: Payment Method */}
               <StepContent isActive={currentStep === 3}>
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -488,6 +631,13 @@ const Checkout = () => {
                       <CreditCard className="w-5 h-5" />
                       Método de pago
                     </h2>
+                    {validationErrors.payment && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-600">
+                          {validationErrors.payment}
+                        </p>
+                      </div>
+                    )}
                     <RadioGroup
                       value={selectedPaymentMethod}
                       onValueChange={(value) =>
@@ -542,7 +692,6 @@ const Checkout = () => {
                 </Card>
               </StepContent>
 
-              {/* Step 5: Final Review */}
               <StepContent isActive={currentStep === 4}>
                 <Card className="border-0 shadow-sm">
                   <CardContent className="p-6">
@@ -572,13 +721,17 @@ const Checkout = () => {
                           </Link>
                         </Label>
                       </div>
+                      {validationErrors.terms && (
+                        <p className="text-xs text-red-500 mt-2">
+                          {validationErrors.terms}
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               </StepContent>
             </div>
 
-            {/* Navigation buttons */}
             <div className="flex justify-between">
               <Button
                 onClick={prevStep}
@@ -593,7 +746,7 @@ const Checkout = () => {
               {currentStep < steps.length - 1 ? (
                 <Button
                   onClick={nextStep}
-                  disabled={!canProceedToNext()}
+                  disabled={!canProceedToNext}
                   className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
                 >
                   Siguiente
@@ -630,7 +783,6 @@ const Checkout = () => {
                     Tu pedido
                   </h3>
 
-                  {/* Product list */}
                   <div className="max-h-96 overflow-y-auto space-y-4 mb-6 pr-2">
                     {cart.map((product) => (
                       <div
@@ -687,7 +839,6 @@ const Checkout = () => {
 
                   <Separator className="mb-4" />
 
-                  {/* Pricing summary */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Subtotal</span>
@@ -710,7 +861,6 @@ const Checkout = () => {
                     </div>
                   </div>
 
-                  {/* Selected shipping method */}
                   {selectedShipping && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                       <p className="text-xs font-medium text-blue-900">
@@ -726,7 +876,6 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {/* Selected payment method */}
                   {currentStep >= 3 && (
                     <div className="mt-4 p-3 bg-green-50 rounded-lg">
                       <p className="text-xs font-medium text-green-900">

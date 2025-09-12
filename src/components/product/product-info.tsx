@@ -70,13 +70,8 @@ export function ProductInfo({ product }: { product: ProductType }) {
     }
 
     const qtyToAdd = Math.min(quantity, remainingStock);
-    const mainImage =
-      Array.isArray(product.imagePaths) && product.imagePaths.length > 0
-        ? product.imagePaths[0]
-        : "/placeholder.svg";
-
-    // addItem expects a product-like object; ensure imagePaths is an array with the main image and pass quantity once
-    addItem({ ...product, quantity: qtyToAdd, imagePaths: [mainImage] });
+  // addItem accepts (product, desiredQty)
+  addItem(product, qtyToAdd);
   };
 
   return (

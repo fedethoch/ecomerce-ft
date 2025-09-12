@@ -1,62 +1,87 @@
-"use client"
+"use client";
 
-import { Eye, Edit, MoreHorizontal, Loader2 } from "lucide-react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { SearchFilterBar } from "@/components/admin/search-filter-bar"
-import { useOrders } from "@/hooks/use-orders"
-import { getOrderStatusBadgeVariant } from "@/lib/helpers/order-helpers"
-import { useAdminLayout } from "@/context/layout-context"
-
-
-
+import { Eye, Edit, MoreHorizontal, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SearchFilterBar } from "@/components/admin/search-filter-bar";
+import { useOrders } from "@/hooks/use-orders";
+import { getOrderStatusBadgeVariant } from "@/lib/helpers/order-helpers";
+import { useAdminLayout } from "@/context/layout-context";
 
 export default function OrdersView() {
-  const { orders, loading, error, updateStatus } = useOrders()
-  const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>({})
-  const { open } = useAdminLayout()
+  const { orders, loading, error, updateStatus } = useOrders();
+  const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>(
+    {}
+  );
+  const { open } = useAdminLayout();
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
-      setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }))
-      await updateStatus(orderId, newStatus)
+      setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
+      await updateStatus(orderId, newStatus);
     } catch (err) {
-      console.error("Error al actualizar estado:", err)
+      console.error("Error al actualizar estado:", err);
     } finally {
-      setUpdatingOrders((prev) => ({ ...prev, [orderId]: false }))
+      setUpdatingOrders((prev) => ({ ...prev, [orderId]: false }));
     }
-  }
+  };
 
   if (loading) {
     return (
-      <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
+      <div
+        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+      >
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
           <p className="text-muted-foreground">Cargando pedidos...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
     return (
-      <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
+      <div
+        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+      >
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
           <p className="text-destructive">{error}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
+    <div
+      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+    >
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
-        <p className="text-muted-foreground">Gestiona todos los pedidos de tu tienda ({orders.length} pedidos)</p>
+        <p className="text-muted-foreground">
+          Gestiona todos los pedidos de tu tienda ({orders.length} pedidos)
+        </p>
       </div>
 
       <SearchFilterBar placeholder="Buscar pedidos..." />
@@ -82,11 +107,19 @@ export default function OrdersView() {
             <TableBody>
               {orders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
-                  <TableCell>{order.user?.name || "Usuario desconocido"}</TableCell>
-                  <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-medium">
+                    #{order.id.slice(0, 8)}
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={getOrderStatusBadgeVariant(order.status)}>{order.status}</Badge>
+                    {order.user?.name || "Usuario desconocido"}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getOrderStatusBadgeVariant(order.status)}>
+                      {order.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>{order.order_items?.length || 0}</TableCell>
                   <TableCell>${order.total_amount}</TableCell>
@@ -107,25 +140,37 @@ export default function OrdersView() {
                           Ver Detalles
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleStatusUpdate(order.id, "Procesando")}
+                          onClick={() =>
+                            handleStatusUpdate(order.id, "Procesando")
+                          }
                           disabled={updatingOrders[order.id]}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Procesando"}
+                          {updatingOrders[order.id]
+                            ? "Actualizando..."
+                            : "Marcar como Procesando"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleStatusUpdate(order.id, "Enviado")}
+                          onClick={() =>
+                            handleStatusUpdate(order.id, "Enviado")
+                          }
                           disabled={updatingOrders[order.id]}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Enviado"}
+                          {updatingOrders[order.id]
+                            ? "Actualizando..."
+                            : "Marcar como Enviado"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleStatusUpdate(order.id, "Completado")}
+                          onClick={() =>
+                            handleStatusUpdate(order.id, "Completado")
+                          }
                           disabled={updatingOrders[order.id]}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id] ? "Actualizando..." : "Marcar como Completado"}
+                          {updatingOrders[order.id]
+                            ? "Actualizando..."
+                            : "Marcar como Completado"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -137,5 +182,5 @@ export default function OrdersView() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

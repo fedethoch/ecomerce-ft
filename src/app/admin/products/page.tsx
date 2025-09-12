@@ -187,9 +187,7 @@ export default function Page() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() =>
-                              router.push(
-                                `/admin/productos/editar/${product.id}`
-                              )
+                              router.push(`/admin/products/edit/${product.id}`)
                             }
                           >
                             <Edit className="h-4 w-4 mr-2" />
