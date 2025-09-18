@@ -22,14 +22,13 @@ export default function LoginPage() {
 
   const handleSubmitWithGoogle = async () => {
     try {
+      const baseUrl =
+        typeof window !== "undefined" ? window.location.origin : ""
       await actionErrorHandler(async () => {
         await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo:
-              process.env.NODE_ENV === "development"
-                ? "https://ecomerce-ft.vercel.app/auth/callback"
-                : "",
+            redirectTo: `${baseUrl}/auth/callback`,
           },
         })
       })
