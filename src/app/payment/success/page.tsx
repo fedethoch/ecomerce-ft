@@ -5,10 +5,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 
 
-export function payment() {
-    
-
-
+export default function Payment() {
     return (
         <div>
             <h1>Pago exitoso</h1>

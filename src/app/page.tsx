@@ -13,6 +13,8 @@ import { getProducts } from "@/controllers/products-controller";
 import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler";
 import type { ProductType } from "@/types/products/products";
 import ProductCarrousel from "@/components/home/products-carrousel";
+
+
 // ...existing imports
 
 export default function HomePage() {
