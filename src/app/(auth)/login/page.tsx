@@ -28,7 +28,7 @@ export default function LoginPage() {
           options: {
             redirectTo:
               process.env.NODE_ENV === "development"
-                ? "http://localhost:3000/auth/callback"
+                ? "https://ecomerce-ft.vercel.app/auth/callback"
                 : "",
           },
         })
