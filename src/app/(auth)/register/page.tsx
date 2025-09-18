@@ -32,8 +32,9 @@ export default function RegisterPage() {
 
   const handleSubmitWithGoogle = async () => {
     try {
-      const baseUrl =
-        typeof window !== "undefined" ? window.location.origin : ""
+      const baseUrl = typeof window !== "undefined"
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_SITE_URL ?? "");
       await actionErrorHandler(async () => {
         await supabase.auth.signInWithOAuth({
           provider: "google",
