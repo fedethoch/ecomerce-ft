@@ -22,15 +22,37 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }, [cart]);
 
   // Funciones del carrito
-  const addItem = (item: ProductType) => {
+  const addItem = (product: ProductType, desiredQty?: number) => {
     setCart((prev) => {
-      const exists = prev.find((p) => p.id === item.id);
+      const exists = prev.find((p) => p.id === product.id) as any | undefined;
+      const availableStock = product.quantity ?? 0; // product.quantity is the stock
+      const desired =
+        typeof desiredQty === "number"
+          ? desiredQty
+          : ((product as any).quantity ?? 1);
+
       if (exists) {
+        const newQty = Math.min(exists.quantity + desired, availableStock);
         return prev.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + item.quantity } : p
+          p.id === product.id
+            ? ({
+                ...(p as any),
+                quantity: newQty,
+                available: availableStock,
+              } as any)
+            : p
         );
       }
-      return [...prev, item];
+
+      const toAddQty = Math.min(desired, availableStock);
+      return [
+        ...prev,
+        {
+          ...(product as any),
+          quantity: toAddQty,
+          available: availableStock,
+        } as any,
+      ];
     });
   };
 
@@ -40,7 +62,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateQuantity = (id: string, quantity: number) => {
     setCart((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const max = (item as any).available ?? item.quantity;
+        const clamped = Math.max(1, Math.min(quantity, max));
+        return { ...item, quantity: clamped };
+      })
     );
   };
 
