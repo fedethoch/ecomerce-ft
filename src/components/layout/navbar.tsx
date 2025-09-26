@@ -703,7 +703,7 @@ export function Navbar() {
                       </div>
 
                       {/* Footer Actions */}
-                      <div className="p-4 border-t bg-white border-[#E7E5E4] space-y-3 fixed bottom-0">
+                      <div className="p-4 border-t border-[#E7E5E4] bg-white space-y-3 sticky bottom-0">
                         {user ? (
                           <>
                             {isAdmin && (
