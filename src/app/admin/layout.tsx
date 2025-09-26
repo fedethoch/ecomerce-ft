@@ -30,7 +30,7 @@ export default async function AdminLayout({
   return (
     <AdminLayoutProvider>
       <div className="flex h-screen bg-background overflow-hidden">
-        <AppSidebar />
+        {/* <AppSidebar /> */}
         <AdminLayoutContent>{children}</AdminLayoutContent>
       </div>
     </AdminLayoutProvider>
