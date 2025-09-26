@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AppSidebar } from "@/components/admin/app-sidebar";
+import { MobileNavbar } from "@/components/admin/app-sidebar";
 import { AdminLayoutProvider } from "@/context/layout-context";
 import { AdminLayoutContent } from "@/components/admin/admin-layout-context";
 
@@ -30,7 +30,7 @@ export default async function AdminLayout({
   return (
     <AdminLayoutProvider>
       <div className="flex h-screen bg-background overflow-hidden">
-        {/* <AppSidebar /> */}
+        <MobileNavbar />
         <AdminLayoutContent>{children}</AdminLayoutContent>
       </div>
     </AdminLayoutProvider>
