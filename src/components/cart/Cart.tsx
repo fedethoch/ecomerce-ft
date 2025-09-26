@@ -119,7 +119,6 @@ export default function Cart() {
                           updateQuantity(item.id, item.quantity + 1)
                         }
                         className="h-8 w-8 p-0"
-                        disabled={item.quantity >= ((item as any).available ?? item.quantity)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>

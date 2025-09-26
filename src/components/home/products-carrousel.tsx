@@ -127,7 +127,7 @@ export default function ProductCarrousel({
 
                         <div className="pt-1">
                           <div className="w-full bg-gray-900 text-white py-2 px-4 rounded-md text-sm font-medium text-center transition-all duration-300 group-hover:bg-primary transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
-                            Ver Producto
+                            Agregar al Carrito
                           </div>
                         </div>
                       </div>
