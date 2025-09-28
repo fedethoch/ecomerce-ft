@@ -5,6 +5,7 @@ import { PaymentService } from "@/services/payment-service"
 import { AppActionException } from "@/types/exceptions"
 import { CreatePreferenceValues } from "@/types/payment/types"
 
+
 export async function createPreference(values: CreatePreferenceValues) {
   try {
     // ✅ Validación carrito
@@ -20,21 +21,24 @@ export async function createPreference(values: CreatePreferenceValues) {
       throw new AppActionException(400, "Carrito inválido", "Hay productos con cantidad 0 o inválida")
     }
 
-    // ✅ Validación envío (si tu checkout requiere envío)
-    if (!values.address || !values.address.state || !values.address.postal_code) {
-      throw new AppActionException(400, "Dirección incompleta", "Completá provincia y código postal para cotizar el envío")
-    }
     if (!values.shipping_method_id) {
       throw new AppActionException(400, "Envío no seleccionado", "Elegí un método de envío")
     }
 
+    const isPickup = values.shipping_method_id === "pickup"
+    if (!isPickup) {
+      if (!values.address || !values.address.state || !values.address.postal_code) {
+        throw new AppActionException(400, "Dirección incompleta", "Completá provincia y código postal para cotizar el envío")
+      }
+    }
     // ✅ Llamada al servicio con address y shipping_method_id
     const service = new PaymentService()
     return await service.createPreference({
       payment_method: values.payment_method,
       items,
-      address: values.address,                       // 👈 NUEVO
-      shipping_method_id: values.shipping_method_id, // 👈 NUEVO
+      shipping_method_id: values.shipping_method_id,
+      // si es pickup no hace falta address
+      address: isPickup ? undefined : values.address,
     })
   } catch (e: any) {
     // 🔎 Log completo en server para diagnóstico

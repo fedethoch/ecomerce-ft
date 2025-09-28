@@ -60,4 +60,8 @@ export class OrdersService {
   }): Promise<Shipment> {
     return this.repository.createShipment(input)
   }
+
+    async adminUpdateStatus(id: string, status: string): Promise<void> {
+    return this.repository.updateOrderStatusAdmin(id, status);
+  }
 }

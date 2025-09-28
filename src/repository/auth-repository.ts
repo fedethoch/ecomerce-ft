@@ -9,7 +9,7 @@ import {
 } from "@/exceptions/auth/auth-exceptions"
 import { ValidationException } from "@/exceptions/base/base-exceptions"
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@/lib/supabase/admin-client"
+import { createAdminClient } from "@/lib/supabase/admin-client"
 import { LoginSchema, RegisterSchema } from "@/lib/validations/AuthSchema"
 import {
   CreateOauthUserValues,

@@ -194,10 +194,21 @@ const Checkout = () => {
   const total = subtotal + (selectedMethodId ? shippingAmount : 0);
 
   useEffect(() => {
+    // Siempre agregamos la opción de retiro en el local
+    const pickupOption: ShippingOption = {
+      method_id: "pickup",
+      label: "Retirar en el local",
+      provider: undefined,
+      service_level: "pickup",
+      amount: 0,
+      eta_min_days: 0,
+      eta_max_days: 0,
+    };
+
     const ready = !!address.state && !!address.postal_code && cart.length > 0;
     if (!ready) {
-      setShippingOptions([]);
-      setSelectedMethodId(null);
+      setShippingOptions([pickupOption]);
+      setSelectedMethodId("pickup");
       return;
     }
 
@@ -205,13 +216,14 @@ const Checkout = () => {
     const items = cart.map((i) => ({ product_id: i.id, quantity: i.quantity }));
     actionErrorHandler(async () => {
       const options = await quoteShipping({ items, address });
-      setShippingOptions(options);
-      setSelectedMethodId(options[0]?.method_id ?? null);
+      const allOptions = [pickupOption, ...options];
+      setShippingOptions(allOptions);
+      setSelectedMethodId(allOptions[0]?.method_id ?? null);
     })
       .catch((e: any) => {
         toast.error(e?.userMessage || "No se pudo cotizar el envío");
-        setShippingOptions([]);
-        setSelectedMethodId(null);
+        setShippingOptions([pickupOption]);
+        setSelectedMethodId("pickup");
       })
       .finally(() => setIsQuoting(false));
   }, [address.state, address.postal_code, cart, address, setIsQuoting]);
@@ -344,15 +356,21 @@ const Checkout = () => {
 
     setIsLoading(true);
     try {
+      const shipping = selectedShipping
+        ? {
+            id: selectedShipping.method_id,           // "pickup" o id del carrier
+            amount: selectedShipping.amount,          // 0 para pickup
+            label: selectedShipping.label,
+            service_level: selectedShipping.service_level, // "pickup" | "standard" | "express"
+          }
+        : null;
+
       const result = await actionErrorHandler(async () => {
         return await createPreference({
-          items: cart.map((item) => ({
-            product_id: item.id,
-            quantity: item.quantity,
-          })),
+          items: cart.map(i => ({ product_id: i.id, quantity: i.quantity })),
           payment_method: selectedPaymentMethod,
-          address,
-          shipping_method_id: selectedMethodId,
+          address,                 // el server lo ignora si es pickup
+          shipping_method_id: selectedMethodId!, // "pickup" o el carrier
         });
       });
 
@@ -612,8 +630,10 @@ const Checkout = () => {
                                 </span>
                               </div>
                               <p className="text-sm text-gray-600">
-                                Est. {opt.eta_min_days}–{opt.eta_max_days} días{" "}
-                                {opt.provider ? `• ${opt.provider}` : ""}
+                                {opt.method_id === "pickup" 
+                                  ? "Disponible inmediatamente • Sin costo de envío"
+                                  : `Est. ${opt.eta_min_days}–${opt.eta_max_days} días${opt.provider ? ` • ${opt.provider}` : ""}`
+                                }
                               </p>
                             </div>
                           </label>

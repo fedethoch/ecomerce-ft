@@ -13,7 +13,7 @@ import {
   CreatePreferenceValues,
   UpdatePreferenceValues,
 } from "@/types/payment/types"
-import MercadoPagoConfig, { Preference } from "mercadopago"
+import { MercadoPagoConfig, Preference } from "mercadopago"
 import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes"
 import { EmailService } from "./email-service"
 
@@ -60,7 +60,22 @@ export class PaymentService {
     const config = new MercadoPagoConfig({ accessToken })
     this.mpClient = new Preference(config)
   }
+  private async loadItems(items: { product_id: string; quantity: number }[]) {
+  // ⚠️ reconstruí título y unit_price desde tu DB por seguridad
+  // return [{ title, unit_price, quantity }]
+  }
 
+  private async verifyCostByMethodId(methodId: string): Promise<number> {
+    // ⚠️ validá contra tu tabla/tarifario (NO confíes en el front)
+    // ej: if (methodId === "andreani_std") return 3499;
+    // throw si el id no existe
+    return 0;
+  }
+
+  private buildExternalRef(input: { shipping_id: string; ts: number }) {
+    // Evitá reutilizar preferencias cuando cambia el envío
+    return `order-${input.shipping_id}-${input.ts}`;
+  }
   // MP + PayPal. Incluye cálculo de envío.
   async createPreference(body: CreatePreferenceValues): Promise<CreatePreferenceResponse> {
     const { payment_method, items } = body
@@ -79,7 +94,7 @@ export class PaymentService {
       throw err
     }
 
-    // 1) Cargar productos y validar
+    // 1) Cargar productos y validar (igual que tenías)
     const lines = await Promise.all(
       items.map(async ({ product_id, quantity }) => {
         if (!product_id || !quantity || quantity <= 0) {
@@ -93,45 +108,63 @@ export class PaymentService {
       })
     )
 
-    // Subtotal (ARS)
     const subtotalARS = round2(lines.reduce((acc, { product, quantity }) => acc + product.price * quantity, 0))
 
-    // 2) Envío (si viene address)
+    // 2) Envío: RESPETAR ELECCIÓN
     const address = (body as any).address as AddressInput | undefined
     const chosenMethodId = (body as any).shipping_method_id as string | undefined
+    if (!chosenMethodId) {
+      throw new PaymentPreferenceDataNotFoundException("Envío no seleccionado", "Elegí un método de envío")
+    }
+
+    const isPickup = chosenMethodId === "pickup"
 
     let shippingAmountARS = 0
-    if (address?.state && address?.postal_code) {
+    if (!isPickup) {
+      // Para carrier SÍ exigimos dirección
+      if (!address?.state || !address?.postal_code) {
+        throw new PaymentPreferenceDataNotFoundException("Dirección incompleta", "Completá provincia y código postal")
+      }
+
+      // Cotizamos y buscamos EXACTAMENTE el método elegido
       try {
         const shippingOptions = await shippingService.quote(
           items.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
           address,
           { declaredValueARS: subtotalARS }
         )
-        const chosen = chosenMethodId
-          ? shippingOptions.find(o => o.method_id === chosenMethodId) ?? shippingOptions[0]
-          : shippingOptions[0]
-        shippingAmountARS = round2(chosen?.amount ?? 0)
-      } catch {
-        shippingAmountARS = 0
+        const chosen = shippingOptions.find(o => o.method_id === chosenMethodId)
+        if (!chosen) {
+          throw new PaymentPreferenceDataNotFoundException(
+            "Método de envío inválido",
+            "La opción de envío elegida ya no está disponible. Volvé a seleccionar."
+          )
+        }
+        shippingAmountARS = round2(chosen.amount)
+      } catch (e) {
+        // Si falla la cotización, no forzamos un carrier diferente
+        throw new PaymentPreferenceDataNotFoundException(
+          "Error al cotizar envío",
+          "No se pudo cotizar el envío; por favor, volvé a seleccionar el método."
+        )
       }
+    } else {
+      // pickup: costo $0 y NO cotizamos
+      shippingAmountARS = 0
     }
 
     const totalARS = round2(subtotalARS + shippingAmountARS)
 
-    // 3) Según método de pago
+    // 3) Según método de pago (Mercado Pago)
     switch (payment_method) {
       case "mercadopago": {
-        
         try {
-          
-
           const order = await ordersService.createOrder({
             user_id: user.id,
             total_amount: totalARS,
             status: "pending",
-            // shipping_amount: shippingAmountARS,
-            // shipping_method_id: chosenMethodId ?? null,
+            shipping_amount: shippingAmountARS,
+            shipping_method_id: isPickup ? null : null,
           } as Partial<Order> as Order)
 
           await Promise.all(
@@ -155,7 +188,8 @@ export class PaymentService {
             })),
           ] as any[]
 
-          if (shippingAmountARS > 0) {
+          // 👇 Sólo agregamos "Envío" como ítem si NO es pickup y el costo > 0
+          if (!isPickup && shippingAmountARS > 0) {
             mpItems.push({
               id: "shipping",
               title: "Envío",
@@ -180,13 +214,13 @@ export class PaymentService {
                 user_id: user.id,
                 shipping_method_id: chosenMethodId ?? null,
                 shipping_amount: shippingAmountARS,
+                is_pickup: isPickup,
               },
-              // 👇 NECESARIO para que llegue el webhook
               notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago`,
             },
           })) as PreferenceResponse
 
-          if (!pref || !pref.init_point) {
+          if (!pref?.init_point) {
             throw new PaymentPreferenceDataNotFoundException("Error MP", "No se pudo crear la preferencia de pago")
           }
 
@@ -352,11 +386,16 @@ export class PaymentService {
       try {
         const shippingSvc = new ShippingService()
 
+        
+
         const [addr, fullOrder] = await Promise.all([
           ordersService.getOrderAddress(order.id),
           ordersService.getOrder(order.id),
-        ])
-        if (!addr || !fullOrder) throw new Error("No hay dirección o ítems para generar el envío")
+        ]);
+        if (!addr) {
+          console.log("[Shipping] Orden sin dirección (pickup): no se emite etiqueta.");
+          return;
+        }
 
         type ChosenOption = {
           method_id: string
@@ -368,6 +407,10 @@ export class PaymentService {
 
         let chosen: ChosenOption | null = null
         const savedMethodId = (order as any).shipping_method_id as string | undefined
+        if (savedMethodId === "pickup") {
+          console.log("[Shipping] Orden con retiro en local: no se emite etiqueta.")
+          return
+        }
         const savedAmount = Number((order as any).shipping_amount ?? 0)
 
         if (savedMethodId) {
@@ -385,13 +428,13 @@ export class PaymentService {
             fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
               product_id: oi.product_id,
               quantity: oi.quantity,
-              weight_grams: oi.product?.weight_grams,
+              weight_grams: oi.product?.weightGrams,
             })),
             addr
           )
           if (!quoteOpts?.length) throw new Error("No se obtuvieron cotizaciones de envío")
 
-          const opt = quoteOpts[0]
+          const opt = quoteOpts.find(o => o.method_id === savedMethodId) ?? quoteOpts[0]
           chosen = {
             method_id: opt.method_id,
             label: opt.label,
@@ -408,7 +451,7 @@ export class PaymentService {
           items: fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
             product_id: oi.product_id,
             quantity: oi.quantity,
-            weight_grams: oi.product?.weight_grams,
+            weight_grams: oi.product?.weightGrams,
           })),
         })
 
