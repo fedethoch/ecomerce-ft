@@ -122,7 +122,10 @@ export class PaymentService {
     // 3) Según método de pago
     switch (payment_method) {
       case "mercadopago": {
+        
         try {
+          
+
           const order = await ordersService.createOrder({
             user_id: user.id,
             total_amount: totalARS,
@@ -178,6 +181,8 @@ export class PaymentService {
                 shipping_method_id: chosenMethodId ?? null,
                 shipping_amount: shippingAmountARS,
               },
+              // 👇 NECESARIO para que llegue el webhook
+              notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago`,
             },
           })) as PreferenceResponse
 
@@ -305,9 +310,9 @@ export class PaymentService {
       )
     }
 
-    if (order.status === "approved") return
+    if (order.status === "success") return
 
-    const newStatus = collection_status === "approved" ? "approved" : "pending"
+    const newStatus = collection_status === "approved" ? "success" : "pending"
     const updatedOrder: Order = { ...order, status: newStatus }
     await ordersService.updateOrder(updatedOrder)
 

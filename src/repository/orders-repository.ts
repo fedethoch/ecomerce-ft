@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Order, OrderItem, OrderWithDetails } from "@/types/orders/types"
 import type { SupabaseClient } from "@supabase/supabase-js"
-
+import { createAdminClient } from "@/lib/supabase/admin-client"
 
 
 export class OrdersRepository {
@@ -123,5 +123,11 @@ export class OrdersRepository {
 
     if (error) throw error;
     return data as OrderItem;
+  }
+
+    async updateOrderStatusAdmin(id: string, status: string): Promise<void> {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+    if (error) throw error;
   }
 }
