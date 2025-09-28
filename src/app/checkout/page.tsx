@@ -97,33 +97,88 @@ const StepIndicator = ({
   steps: any[];
   currentStep: number;
 }) => (
-  <div className="flex items-center justify-center mb-8">
-    {steps.map((step, index) => (
-      <div key={step.id} className="flex items-center">
-        <div
-          className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all duration-300 ${
-            index < currentStep
-              ? "bg-green-500 text-white"
-              : index === currentStep
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-500"
-          }`}
-        >
-          {index < currentStep ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            index + 1
-          )}
-        </div>
-        {index < steps.length - 1 && (
-          <div
-            className={`w-12 h-0.5 mx-2 transition-all duration-300 ${
-              index < currentStep ? "bg-green-500" : "bg-gray-200"
-            }`}
-          />
-        )}
+  <div className="mb-6 sm:mb-8 px-2">
+    {/* Mobile: Vertical compact layout */}
+    <div className="block sm:hidden">
+      <div className="flex flex-col space-y-2">
+        {steps.map((step, index) => (
+          <div key={step.id} className="flex items-center gap-3">
+            <div
+              className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium transition-all duration-300 flex-shrink-0 ${
+                index < currentStep
+                  ? "bg-green-500 text-white"
+                  : index === currentStep
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-500"
+              }`}
+            >
+              {index < currentStep ? (
+                <CheckCircle2 className="w-3 h-3" />
+              ) : (
+                index + 1
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className={`text-sm font-medium ${
+                  index === currentStep
+                    ? "text-blue-600"
+                    : index < currentStep
+                      ? "text-green-600"
+                      : "text-gray-500"
+                }`}
+              >
+                {step.title}
+              </p>
+              <p className="text-xs text-gray-400">{step.description}</p>
+            </div>
+            {index === currentStep && (
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse flex-shrink-0" />
+            )}
+          </div>
+        ))}
       </div>
-    ))}
+    </div>
+
+    {/* Desktop: Horizontal layout */}
+    <div className="hidden sm:flex items-center justify-center">
+      <div className="flex items-center">
+        {steps.map((step, index) => (
+          <div key={step.id} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium transition-all duration-300 ${
+                  index < currentStep
+                    ? "bg-green-500 text-white"
+                    : index === currentStep
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                {index < currentStep ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  index + 1
+                )}
+              </div>
+              <div className="mt-2 text-center">
+                <p className="text-sm font-medium text-gray-900">
+                  {step.title}
+                </p>
+                <p className="text-xs text-gray-500">{step.description}</p>
+              </div>
+            </div>
+            {index < steps.length - 1 && (
+              <div
+                className={`w-12 h-0.5 mx-3 transition-all duration-300 ${
+                  index < currentStep ? "bg-green-500" : "bg-gray-200"
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -375,30 +430,30 @@ const Checkout = () => {
   if (isRedirecting) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
             Finalizar inscripción
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Completa tu pedido en {steps.length} simples pasos
           </p>
         </div>
 
         <StepIndicator steps={steps} currentStep={currentStep} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="relative min-h-[500px] mb-8 overflow-hidden">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
+          <div className="xl:col-span-2 order-2 xl:order-1">
+            <div className="relative min-h-[400px] sm:min-h-[500px] mb-6 sm:mb-8 overflow-hidden">
               <StepContent isActive={currentStep === 0}>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <ShoppingBag className="w-5 h-5" />
+                  <CardContent className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
                       Confirmar productos
                     </h2>
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-sm sm:text-base text-gray-600 mb-4">
                       Revisa los productos en tu carrito. Puedes ver el resumen
                       completo en el panel lateral.
                     </p>
@@ -417,19 +472,19 @@ const Checkout = () => {
 
               <StepContent isActive={currentStep === 1}>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <MapPin className="w-5 h-5" />
+                  <CardContent className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                       Dirección de entrega
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm">Nombre completo</Label>
                         <input
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.full_name
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.full_name}
                           onChange={(e) =>
@@ -449,10 +504,10 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label className="text-sm">Teléfono</Label>
                         <input
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.phone
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.phone}
                           onChange={(e) =>
@@ -466,13 +521,13 @@ const Checkout = () => {
                           </p>
                         )}
                       </div>
-                      <div className="space-y-2 md:col-span-2">
+                      <div className="space-y-2 sm:col-span-2">
                         <Label className="text-sm">Dirección</Label>
                         <input
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.line1
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.line1}
                           onChange={(e) =>
@@ -489,10 +544,10 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label className="text-sm">Ciudad</Label>
                         <input
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.city
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.city}
                           onChange={(e) =>
@@ -509,10 +564,10 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label className="text-sm">Provincia</Label>
                         <select
-                          className={`w-full rounded-md border px-3 py-2 text-sm bg-white focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.state
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.state}
                           onChange={(e) =>
@@ -535,10 +590,10 @@ const Checkout = () => {
                       <div className="space-y-2">
                         <Label className="text-sm">Código postal</Label>
                         <input
-                          className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all ${
                             validationErrors.postal_code
-                              ? "border-red-500 focus:border-red-500"
-                              : "border-gray-300 focus:border-blue-500"
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+                              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           }`}
                           value={address.postal_code}
                           onChange={(e) =>
@@ -562,9 +617,9 @@ const Checkout = () => {
 
               <StepContent isActive={currentStep === 2}>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <Truck className="w-5 h-5" />
+                  <CardContent className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                      <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
                       Método de envío
                     </h2>
                     {validationErrors.shipping && (
@@ -577,7 +632,9 @@ const Checkout = () => {
                     {isQuoting ? (
                       <div className="flex items-center gap-3 text-gray-600">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Calculando opciones de envío…</span>
+                        <span className="text-sm sm:text-base">
+                          Calculando opciones de envío…
+                        </span>
                       </div>
                     ) : shippingOptions.length === 0 ? (
                       <div className="text-sm text-gray-600">
@@ -593,10 +650,10 @@ const Checkout = () => {
                           <label
                             key={opt.method_id}
                             htmlFor={opt.method_id}
-                            className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition ${
+                            className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all hover:shadow-sm ${
                               selectedMethodId === opt.method_id
                                 ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200"
+                                : "border-gray-200 hover:border-gray-300"
                             }`}
                           >
                             <RadioGroupItem
@@ -604,14 +661,16 @@ const Checkout = () => {
                               value={opt.method_id}
                               className="mt-1"
                             />
-                            <div className="flex-1">
-                              <div className="flex justify-between">
-                                <span className="font-medium">{opt.label}</span>
-                                <span className="font-semibold">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2">
+                                <span className="font-medium text-sm sm:text-base">
+                                  {opt.label}
+                                </span>
+                                <span className="font-semibold text-sm sm:text-base">
                                   {currency.format(opt.amount)}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-xs sm:text-sm text-gray-600 mt-1">
                                 Est. {opt.eta_min_days}–{opt.eta_max_days} días{" "}
                                 {opt.provider ? `• ${opt.provider}` : ""}
                               </p>
@@ -626,9 +685,9 @@ const Checkout = () => {
 
               <StepContent isActive={currentStep === 3}>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <CreditCard className="w-5 h-5" />
+                  <CardContent className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
                       Método de pago
                     </h2>
                     {validationErrors.payment && (
@@ -645,7 +704,7 @@ const Checkout = () => {
                           value as "mercadopago" | "paypal"
                         )
                       }
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                      className="grid grid-cols-1 xs:grid-cols-2 gap-4"
                     >
                       <div className="relative">
                         <RadioGroupItem
@@ -655,15 +714,17 @@ const Checkout = () => {
                         />
                         <Label
                           htmlFor="mercadopago"
-                          className={`block p-4 border rounded-lg cursor-pointer transition ${
+                          className={`block p-4 sm:p-6 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
                             selectedPaymentMethod === "mercadopago"
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <div className="flex flex-col items-center text-center space-y-2">
-                            <MercadoPago className="w-12 h-12" />
-                            <span className="font-medium">Mercado Pago</span>
+                            <MercadoPago className="w-10 h-10 sm:w-12 sm:h-12" />
+                            <span className="font-medium text-sm sm:text-base">
+                              Mercado Pago
+                            </span>
                           </div>
                         </Label>
                       </div>
@@ -675,15 +736,17 @@ const Checkout = () => {
                         />
                         <Label
                           htmlFor="paypal"
-                          className={`block p-4 border rounded-lg cursor-pointer transition ${
+                          className={`block p-4 sm:p-6 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
                             selectedPaymentMethod === "paypal"
                               ? "border-blue-500 bg-blue-50"
                               : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <div className="flex flex-col items-center text-center space-y-2">
-                            <PayPal className="w-12 h-12" />
-                            <span className="font-medium">PayPal</span>
+                            <PayPal className="w-10 h-10 sm:w-12 sm:h-12" />
+                            <span className="font-medium text-sm sm:text-base">
+                              PayPal
+                            </span>
                           </div>
                         </Label>
                       </div>
@@ -694,9 +757,9 @@ const Checkout = () => {
 
               <StepContent isActive={currentStep === 4}>
                 <Card className="border-0 shadow-sm">
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                      <Tag className="w-5 h-5" />
+                  <CardContent className="p-4 sm:p-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+                      <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
                       Confirmar pedido
                     </h2>
                     <div className="mb-6">
@@ -707,6 +770,7 @@ const Checkout = () => {
                           onCheckedChange={(checked) =>
                             setAcceptTerms(checked === true)
                           }
+                          className="mt-0.5"
                         />
                         <Label
                           htmlFor="terms"
@@ -732,12 +796,12 @@ const Checkout = () => {
               </StepContent>
             </div>
 
-            <div className="flex justify-between">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
               <Button
                 onClick={prevStep}
                 disabled={currentStep === 0}
                 variant="outline"
-                className="flex items-center gap-2 bg-transparent transition-all duration-300 hover:scale-105"
+                className="flex items-center justify-center gap-2 bg-transparent transition-all duration-300 hover:scale-105 h-11 sm:h-10"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Anterior
@@ -747,7 +811,7 @@ const Checkout = () => {
                 <Button
                   onClick={nextStep}
                   disabled={!canProceedToNext}
-                  className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
+                  className="flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 h-11 sm:h-10"
                 >
                   Siguiente
                   <ArrowRight className="w-4 h-4" />
@@ -756,7 +820,7 @@ const Checkout = () => {
                 <Button
                   onClick={handleContinuePayment}
                   disabled={!acceptTerms || isLoading || !selectedMethodId}
-                  className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
+                  className="flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105 h-11 sm:h-10"
                 >
                   {isLoading ? (
                     <>
@@ -774,22 +838,22 @@ const Checkout = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
+          <div className="xl:col-span-1 order-1 xl:order-2">
+            <div className="xl:sticky xl:top-8">
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5" />
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-4 flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
                     Tu pedido
                   </h3>
 
-                  <div className="max-h-96 overflow-y-auto space-y-4 mb-6 pr-2">
+                  <div className="max-h-80 sm:max-h-96 overflow-y-auto space-y-3 sm:space-y-4 mb-4 sm:mb-6 pr-2">
                     {cart.map((product) => (
                       <div
                         key={product.id}
                         className="flex gap-3 p-3 bg-gray-50 rounded-lg transition-all duration-200 hover:bg-gray-100"
                       >
-                        <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
                           <Image
                             src={
                               Array.isArray(product.imagePaths) &&
@@ -804,20 +868,20 @@ const Checkout = () => {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-900 mb-1">
+                          <h4 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1 line-clamp-2">
                             {product.name}
                           </h4>
                           {product.description && (
-                            <p className="text-xs text-gray-600 mb-1 line-clamp-2">
+                            <p className="text-xs text-gray-600 mb-1 line-clamp-1 sm:line-clamp-2">
                               {product.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                               Cantidad: {product.quantity}
                             </span>
                             {product.category && (
-                              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
                                 {product.category}
                               </span>
                             )}
@@ -826,7 +890,7 @@ const Checkout = () => {
                             <span className="text-xs text-gray-500">
                               {currency.format(product.price)} c/u
                             </span>
-                            <span className="text-sm font-bold text-gray-900">
+                            <span className="text-xs sm:text-sm font-bold text-gray-900">
                               {currency.format(
                                 product.price * product.quantity
                               )}

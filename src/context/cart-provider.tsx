@@ -26,17 +26,33 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCart((prev) => {
       const exists = prev.find((p) => p.id === product.id) as any | undefined;
       const availableStock = product.quantity ?? 0; // product.quantity is the stock
-      const desired = typeof desiredQty === "number" ? desiredQty : (product as any).quantity ?? 1;
+      const desired =
+        typeof desiredQty === "number"
+          ? desiredQty
+          : ((product as any).quantity ?? 1);
 
       if (exists) {
         const newQty = Math.min(exists.quantity + desired, availableStock);
         return prev.map((p) =>
-          p.id === product.id ? ({ ...(p as any), quantity: newQty, available: availableStock } as any) : p
+          p.id === product.id
+            ? ({
+                ...(p as any),
+                quantity: newQty,
+                available: availableStock,
+              } as any)
+            : p
         );
       }
 
       const toAddQty = Math.min(desired, availableStock);
-      return [...prev, ({ ...(product as any), quantity: toAddQty, available: availableStock } as any)];
+      return [
+        ...prev,
+        {
+          ...(product as any),
+          quantity: toAddQty,
+          available: availableStock,
+        } as any,
+      ];
     });
   };
 

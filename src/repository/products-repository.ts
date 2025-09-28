@@ -1,13 +1,13 @@
 import {
   ProductCreationException,
   ProductNotFoundException,
-} from "@/exceptions/products/products-exceptions"
-import { createClient } from "@/lib/supabase/server"
-import { ProductSchema } from "@/lib/validations/ProductSchema"
-import { ProductType } from "@/types/products/products"
-import { ValidationException } from "@/exceptions/base/base-exceptions"
-import type { SupabaseClient } from "@supabase/supabase-js"
-import { v4 as uuidv4 } from 'uuid';
+} from "@/exceptions/products/products-exceptions";
+import { createClient } from "@/lib/supabase/server";
+import { ProductSchema } from "@/lib/validations/ProductSchema";
+import { ProductType } from "@/types/products/products";
+import { ValidationException } from "@/exceptions/base/base-exceptions";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { v4 as uuidv4 } from "uuid";
 
 function fromRow(prod: any): ProductType {
   return {
@@ -24,34 +24,28 @@ function fromRow(prod: any): ProductType {
     description: String(prod.description ?? ""),
     imagePaths: Array.isArray(prod.image_paths) ? prod.image_paths : [], // 👈 tu tabla usa image_paths
     weightGrams: prod.weight_grams ?? undefined,
-  }
+  };
 }
 
 // Util para mapear camel -> snake (escritura a DB)
 function toRow(updates: Partial<Omit<ProductType, "id">>) {
-  const out: Record<string, any> = {}
+  const out: Record<string, any> = {};
 
-  if ("name" in updates) out.name = updates.name
-  if ("price" in updates) out.price = updates.price
-  if ("originalPrice" in updates) out.original_price = updates.originalPrice
-  if ("quantity" in updates) out.quantity = updates.quantity
-  if ("category" in updates) out.category = updates.category
-  if ("isNew" in updates) out.is_new = updates.isNew
-  if ("isSale" in updates) out.is_sale = updates.isSale
-  if ("isOutstanding" in updates) out.is_outstanding = updates.isOutstanding
-  if ("sizes" in updates) out.sizes = updates.sizes
-  if ("description" in updates) out.description = updates.description
-  if ("imagePaths" in updates) out.image_paths = updates.imagePaths // 👈 consistente con createProduct
-  if ("weightGrams" in updates) out.weight_grams = updates.weightGrams
+  if ("name" in updates) out.name = updates.name;
+  if ("price" in updates) out.price = updates.price;
+  if ("originalPrice" in updates) out.original_price = updates.originalPrice;
+  if ("quantity" in updates) out.quantity = updates.quantity;
+  if ("category" in updates) out.category = updates.category;
+  if ("isNew" in updates) out.is_new = updates.isNew;
+  if ("isSale" in updates) out.is_sale = updates.isSale;
+  if ("isOutstanding" in updates) out.is_outstanding = updates.isOutstanding;
+  if ("sizes" in updates) out.sizes = updates.sizes;
+  if ("description" in updates) out.description = updates.description;
+  if ("imagePaths" in updates) out.image_paths = updates.imagePaths; // 👈 consistente con createProduct
+  if ("weightGrams" in updates) out.weight_grams = updates.weightGrams;
 
-  return out
+  return out;
 }
-
-
-
-
-
-
 
 export class ProductsRepository {
   private supabase: SupabaseClient | null = null;
@@ -70,16 +64,16 @@ export class ProductsRepository {
     console.log("Datos recibidos para crear producto:", values);
     const productWithId = {
       ...values,
-      id
+      id,
     };
     if (!validate_fields.success) {
       const fieldErrors: Record<string, string[]> = {};
-      
-      validate_fields.error.errors.forEach((error) => {
+
+      validate_fields.error.issues.forEach((error) => {
         const field = error.path.join(".");
         fieldErrors[field] = [...(fieldErrors[field] || []), error.message];
       });
-      
+
       throw new ValidationException(
         "Error de validación",
         fieldErrors,
@@ -100,7 +94,7 @@ export class ProductsRepository {
       is_outstanding: values.isOutstanding,
       sizes: values.sizes,
       description: values.description,
-      image_paths: values.imagePaths
+      image_paths: values.imagePaths,
     };
 
     console.log("Insertando en Supabase:", insertData);
@@ -120,13 +114,11 @@ export class ProductsRepository {
 
     console.log("Insert exitoso:", data);
     return data as ProductType;
-}
+  }
 
   async getProducts(): Promise<ProductType[]> {
     const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*");
+    const { data, error } = await supabase.from("products").select("*");
     if (error) {
       throw new ProductNotFoundException(
         error.message,
@@ -140,10 +132,10 @@ export class ProductsRepository {
       );
     }
     // Mapeo aquí:
-    const mapped = data.map(fromRow)
-    
-    return mapped
-}
+    const mapped = data.map(fromRow);
+
+    return mapped;
+  }
 
   async getProduct(id: string): Promise<ProductType> {
     const supabase = await this.getSupabase();
@@ -173,9 +165,7 @@ export class ProductsRepository {
 
   async getAllProducts(): Promise<ProductType[]> {
     const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("products")
-      .select("*");
+    const { data, error } = await supabase.from("products").select("*");
 
     if (error) {
       throw new ProductNotFoundException(
@@ -192,13 +182,13 @@ export class ProductsRepository {
     }
 
     // Mapeo aquí:
-    const mapped = data.map(fromRow)
+    const mapped = data.map(fromRow);
     return mapped;
   }
 
   async updateProduct(id: string, updates: Partial<Omit<ProductType, "id">>) {
     const supabase = await this.getSupabase();
-    
+
     const { data, error } = await supabase
       .from("products")
       .update(updates)
@@ -212,11 +202,8 @@ export class ProductsRepository {
 
   async deleteProduct(id: string) {
     const supabase = await this.getSupabase();
-    
-    const { error } = await supabase
-      .from("products")
-      .delete()
-      .eq("id", id);
+
+    const { error } = await supabase.from("products").delete().eq("id", id);
 
     if (error) throw error;
     return true;

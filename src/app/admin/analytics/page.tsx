@@ -58,16 +58,18 @@ export default function AnalyticsView() {
 
   return (
     <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+      className={`space-y-4 md:space-y-6 p-4 md:p-6 lg:p-8 transition-all duration-300 ${open ? "lg:ml-64" : "lg:ml-16"}`}
     >
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          Analytics
+        </h1>
         <p className="text-muted-foreground">
           Analiza el rendimiento de tu tienda
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Conversión"
           value="3.2%"
@@ -94,13 +96,13 @@ export default function AnalyticsView() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Ventas por Categoría</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[300px] md:h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -132,7 +134,7 @@ export default function AnalyticsView() {
             <CardTitle>Tendencia de Ventas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[300px] md:h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={salesTrend}>
                   <CartesianGrid strokeDasharray="3 3" />

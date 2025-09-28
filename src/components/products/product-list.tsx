@@ -1,22 +1,24 @@
-import { ProductCard } from "@/components/ui/product-card"
+import { ProductCard } from "@/components/ui/product-card";
 
-import { ProductType } from "@/types/products/products"
+import { ProductType } from "@/types/products/products";
 
 interface ProductListProps {
-  products: ProductType[]
+  products: ProductType[];
 }
 
 export function ProductList({ products }: ProductListProps) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground text-lg">No se encontraron productos</p>
+        <p className="text-muted-foreground text-lg">
+          No se encontraron productos
+        </p>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product, index) => (
         <div
           key={product.id}
@@ -27,5 +29,5 @@ export function ProductList({ products }: ProductListProps) {
         </div>
       ))}
     </div>
-  )
+  );
 }

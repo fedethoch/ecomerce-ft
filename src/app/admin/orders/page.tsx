@@ -50,10 +50,12 @@ export default function OrdersView() {
   if (loading) {
     return (
       <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+        className={`space-y-4 p-4 md:p-6 lg:p-8 transition-all duration-300 ${open ? "lg:ml-64" : "lg:ml-16"}`}
       >
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Pedidos
+          </h1>
           <p className="text-muted-foreground">Cargando pedidos...</p>
         </div>
       </div>
@@ -63,10 +65,12 @@ export default function OrdersView() {
   if (error) {
     return (
       <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+        className={`space-y-4 p-4 md:p-6 lg:p-8 transition-all duration-300 ${open ? "lg:ml-64" : "lg:ml-16"}`}
       >
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Pedidos
+          </h1>
           <p className="text-destructive">{error}</p>
         </div>
       </div>
@@ -75,10 +79,12 @@ export default function OrdersView() {
 
   return (
     <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
+      className={`space-y-4 md:space-y-6 p-4 md:p-6 lg:p-8 transition-all duration-300 ${open ? "lg:ml-64" : "lg:ml-16"}`}
     >
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          Pedidos
+        </h1>
         <p className="text-muted-foreground">
           Gestiona todos los pedidos de tu tienda ({orders.length} pedidos)
         </p>
@@ -92,93 +98,95 @@ export default function OrdersView() {
           <CardDescription>Todos los pedidos de tu tienda</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pedido</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead className="w-[70px]">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">
-                    #{order.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell>
-                    {order.user?.name || "Usuario desconocido"}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getOrderStatusBadgeVariant(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{order.order_items?.length || 0}</TableCell>
-                  <TableCell>${order.total_amount}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          {updatingOrders[order.id] ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalles
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusUpdate(order.id, "Procesando")
-                          }
-                          disabled={updatingOrders[order.id]}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Procesando"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusUpdate(order.id, "Enviado")
-                          }
-                          disabled={updatingOrders[order.id]}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Enviado"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusUpdate(order.id, "Completado")
-                          }
-                          disabled={updatingOrders[order.id]}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Completado"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[100px]">Pedido</TableHead>
+                  <TableHead className="min-w-[120px]">Cliente</TableHead>
+                  <TableHead className="min-w-[100px]">Fecha</TableHead>
+                  <TableHead className="min-w-[100px]">Estado</TableHead>
+                  <TableHead className="min-w-[80px]">Items</TableHead>
+                  <TableHead className="min-w-[100px]">Total</TableHead>
+                  <TableHead className="w-[70px]">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">
+                      #{order.id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell>
+                      {order.user?.name || "Usuario desconocido"}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getOrderStatusBadgeVariant(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{order.order_items?.length || 0}</TableCell>
+                    <TableCell>${order.total_amount}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            {updatingOrders[order.id] ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Detalles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusUpdate(order.id, "Procesando")
+                            }
+                            disabled={updatingOrders[order.id]}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            {updatingOrders[order.id]
+                              ? "Actualizando..."
+                              : "Marcar como Procesando"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusUpdate(order.id, "Enviado")
+                            }
+                            disabled={updatingOrders[order.id]}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            {updatingOrders[order.id]
+                              ? "Actualizando..."
+                              : "Marcar como Enviado"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusUpdate(order.id, "Completado")
+                            }
+                            disabled={updatingOrders[order.id]}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            {updatingOrders[order.id]
+                              ? "Actualizando..."
+                              : "Marcar como Completado"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
