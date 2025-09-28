@@ -39,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   console.log("URL usada para", product.name, ":", mainImage);
 
   return (
-    <div className="group relative h-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+    <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       <Link href={`/productos/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden">
           {/* Imagen principal del producto */}
@@ -47,7 +47,7 @@ export function ProductCard({ product }: ProductCardProps) {
             src={mainImage}
             alt={product.name}
             fill
-            className="object-contain group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
           {/* Badges */}

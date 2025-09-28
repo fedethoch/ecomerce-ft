@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +21,6 @@ import {
 import { useProducts } from "@/hooks/use-products";
 import type { ProductType } from "@/types/products/products";
 import { useRouter } from "next/navigation";
-import { useAdminLayout } from "@/context/layout-context";
 
 export default function Page() {
   const { addProduct } = useProducts();
@@ -32,7 +29,6 @@ export default function Page() {
   const [mainImageIndex, setMainImageIndex] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const { open } = useAdminLayout();
 
   const [formData, setFormData] = useState<Omit<ProductType, "id">>({
     name: "",
@@ -91,13 +87,14 @@ export default function Page() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setImageFiles(Array.from(e.target.files));
-      setMainImageIndex(0);
+      setMainImageIndex(0); // reset principal al agregar nuevas imágenes
     }
   };
 
   const handleRemoveImage = (idx: number) => {
     setImageFiles((prev) => {
       const newFiles = prev.filter((_, i) => i !== idx);
+      // Si eliminamos la principal, la nueva principal será la 0
       if (idx === mainImageIndex) {
         setMainImageIndex(0);
       } else if (idx < mainImageIndex) {
@@ -108,14 +105,10 @@ export default function Page() {
   };
 
   return (
-    <div
-      className={`space-y-4 md:space-y-6 p-4 md:p-6 lg:p-8 transition-all duration-300 ${open ? "lg:ml-64" : "lg:ml-16"}`}
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 p-8 absolute left-64 w-[calc(100%-16rem)]">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Crear Producto
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">Crear Producto</h1>
           <p className="text-muted-foreground">
             Añade un nuevo producto a tu inventario
           </p>
@@ -123,14 +116,13 @@ export default function Page() {
         <Button
           variant="outline"
           onClick={() => router.push("/admin/products")}
-          className="w-full sm:w-auto"
         >
           Volver a Productos
         </Button>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
@@ -152,7 +144,7 @@ export default function Page() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Precio</Label>
                   <Input
@@ -194,7 +186,6 @@ export default function Page() {
                   />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="quantity">Stock</Label>
                 <Input
@@ -202,7 +193,7 @@ export default function Page() {
                   type="number"
                   step="1"
                   placeholder="0"
-                  value={formData.quantity === 0 ? "" : formData.quantity}
+                  value={formData.quantity === 0 ? "" : formData.quantity} // Muestra vacío cuando es 0
                   onChange={(e) => {
                     const value = e.target.value;
                     setFormData((prev) => ({
@@ -213,7 +204,6 @@ export default function Page() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="description">Descripción</Label>
                 <Input
@@ -230,7 +220,6 @@ export default function Page() {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="category">Categoría</Label>
                 <Select
@@ -253,7 +242,7 @@ export default function Page() {
                 </Select>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex gap-4">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -316,40 +305,42 @@ export default function Page() {
               <div className="space-y-2">
                 <Label>Imágenes</Label>
                 <div className="flex items-start gap-3 flex-wrap flex-col">
+                  {/* Imágenes seleccionadas arriba */}
                   {imageFiles.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-2 w-full">
+                    <div className="flex gap-4 flex-wrap mb-2">
                       {imageFiles.map((file, idx) => (
                         <div
                           key={idx}
                           className="relative group flex flex-col items-center"
+                          style={{ width: 90 }}
                         >
                           <div
-                            className={`rounded-lg overflow-hidden border transition-all duration-300 w-full aspect-square
+                            className={`rounded-lg overflow-hidden border transition-all duration-300
                               ${
                                 idx === mainImageIndex
                                   ? "ring-2 ring-blue-500 scale-105 shadow-lg"
                                   : "hover:ring-2 hover:ring-blue-300"
                               }
                           `}
-                            style={{ cursor: "pointer" }}
+                            style={{ width: 80, height: 80, cursor: "pointer" }}
                             onClick={() => setMainImageIndex(idx)}
                           >
                             <img
-                              src={
-                                URL.createObjectURL(file) || "/placeholder.svg"
-                              }
+                              src={URL.createObjectURL(file)}
                               alt={file.name}
                               className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
                             />
+                            {/* Badge principal */}
                             {idx === mainImageIndex && (
                               <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
                                 Principal
                               </span>
                             )}
                           </div>
-                          <span className="text-xs truncate mt-2 text-center w-full">
+                          <span className="text-xs max-w-[80px] truncate mt-2 text-center">
                             {file.name}
                           </span>
+                          {/* Botón eliminar debajo de la imagen */}
                           <button
                             type="button"
                             onClick={() => handleRemoveImage(idx)}
@@ -376,7 +367,8 @@ export default function Page() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3 w-full">
+                  {/* Botón para seleccionar imágenes */}
+                  <div className="flex items-center gap-3">
                     <Input
                       type="file"
                       accept="image/*"
@@ -389,12 +381,12 @@ export default function Page() {
                       type="button"
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full sm:w-auto"
                     >
                       Seleccionar Imágenes
                     </Button>
                   </div>
 
+                  {/* Texto debajo */}
                   <p className="text-xs text-muted-foreground mt-2">
                     Imágenes del Producto
                     <br />
@@ -406,16 +398,15 @@ export default function Page() {
           </Card>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-6">
+        <div className="flex justify-end space-x-2 mt-6">
           <Button
             type="button"
             variant="outline"
             onClick={() => router.push("/admin/products")}
-            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+          <Button type="submit" disabled={loading}>
             {loading ? "Creando..." : "Crear Producto"}
           </Button>
         </div>

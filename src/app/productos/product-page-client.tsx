@@ -63,7 +63,7 @@ export default function ProductPageClient() {
 
     const mappedCategoryFromType = typeParam
       ? (typeToFilterCategory[typeParam.toLowerCase().trim()] ??
-        typeParam.toLowerCase().trim())
+          typeParam.toLowerCase().trim())
       : undefined;
 
     const parsedInitialFilters = {
@@ -143,9 +143,7 @@ export default function ProductPageClient() {
   }, [searchParams?.toString()]);
 
   const normalize = (s: unknown) =>
-    String(s ?? "")
-      .toLowerCase()
-      .trim();
+    String(s ?? "").toLowerCase().trim();
 
   const categoryMatches = (
     selected: string | undefined | null,
@@ -156,28 +154,13 @@ export default function ProductPageClient() {
     if (!sel || sel === "all") return true;
 
     const variants: Record<string, string[]> = {
-      hombre: [
-        "hombre",
-        "hombres",
-        "man",
-        "men",
-        "masculino",
-        "varon",
-        "varones",
-      ],
+      hombre: ["hombre", "hombres", "man", "men", "masculino", "varon", "varones"],
       mujer: ["mujer", "mujeres", "woman", "women", "femenino"],
       accesorios: ["accesorio", "accesorios", "accessories"],
       camisetas: ["camiseta", "camisetas", "tshirt", "tee", "polera", "remera"],
       pantalones: ["pantalon", "pantalones", "pants", "trousers", "jeans"],
       vestidos: ["vestido", "vestidos", "dress", "dresses"],
-      chaquetas: [
-        "chaqueta",
-        "chaquetas",
-        "jacket",
-        "jackets",
-        "abrigo",
-        "abrigos",
-      ],
+      chaquetas: ["chaqueta", "chaquetas", "jacket", "jackets", "abrigo", "abrigos"],
       calzado: ["calzado", "zapato", "zapatos", "shoes", "footwear"],
     };
 
@@ -227,17 +210,6 @@ export default function ProductPageClient() {
       console.warn("Could not update URL with filters", e);
     }
   };
-
-  // Scroll to top whenever the current page changes (e.g., when clicking pagination)
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, [currentPage]);
 
   if (isLoading) {
     return (

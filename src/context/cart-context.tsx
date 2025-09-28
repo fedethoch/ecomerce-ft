@@ -5,8 +5,8 @@ import { ProductType } from "@/types/products/products"
 
 // Tipo del contexto: qué datos y funciones expondrá
 export type CartContextType = {
-  cart: ProductType[];
-  addItem: (item: ProductType) => void;
+  cart: Array<ProductType & { available?: number }>;
+  addItem: (product: ProductType, desiredQty?: number) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
