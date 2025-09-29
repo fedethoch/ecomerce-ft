@@ -197,4 +197,48 @@ export class OrdersRepository {
     if (error) throw error;
     return data as Shipment;
   }
+
+  async getOrderAdmin(id: string): Promise<OrderWithDetails> {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("orders")     
+      .select(`
+        *,
+        user:users(*),
+        order_items(
+          * ,
+          product:products(*)
+        )
+      `)
+      .eq("id", id)
+      .single()
+
+    if (error && error.code !== "PGRST116") throw error
+    return (data as OrderWithDetails) ?? null
+  }
+
+  async updateOrderAdmin(order: Order): Promise<Order> {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from("orders")
+      .update(order)
+      .eq("id", order.id)
+      .select("*")
+      .single()
+
+    if (error) throw error
+    return data as Order
+  }
+
+  async getOrderAddressAdmin(order_id: string): Promise<OrderAddress | null> {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from("order_addresses") // ⚠️ cambia el nombre si tu tabla es otra
+      .select("*")
+      .eq("order_id", order_id)
+      .single()
+
+    if (error && error.code !== "PGRST116") throw error
+    return (data as OrderAddress) ?? null
+  }
 }

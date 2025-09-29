@@ -36,19 +36,14 @@ export class OrdersService {
     return this.repository.createOrderItem(orderItem)
   }
 
-  // ========= NUEVOS PARA ENVÍOS =========
-
-  // Guardar/actualizar la dirección de la orden
   async createOrderAddress(addr: { order_id: string } & AddressInput): Promise<OrderAddress> {
     return this.repository.createOrderAddress(addr)
   }
 
-  // Traer la dirección guardada para una orden
   async getOrderAddress(order_id: string): Promise<OrderAddress | null> {
     return this.repository.getOrderAddress(order_id)
   }
 
-  // Registrar un envío (tracking/etiqueta) cuando se compra la guía
   async createShipment(input: {
     order_id: string
     carrier: string
@@ -56,12 +51,24 @@ export class OrdersService {
     tracking_number: string
     label_url?: string
     amount_customer: number
-    status?: string        // default 'label_pending' en DB
+    status?: string      
   }): Promise<Shipment> {
     return this.repository.createShipment(input)
   }
 
-    async adminUpdateStatus(id: string, status: string): Promise<void> {
+  async adminUpdateStatus(id: string, status: string): Promise<void> {
     return this.repository.updateOrderStatusAdmin(id, status);
   }
+
+  async getOrderAdmin(id: string): Promise<OrderWithDetails | null> {
+    return this.repository.getOrderAdmin(id)
+  }
+
+  async updateOrderAdmin(order: Order): Promise<Order> {
+    return this.repository.updateOrderAdmin(order)
+  }
+
+  async getOrderAddressAdmin(order_id: string): Promise<OrderAddress | null> {
+    return this.repository.getOrderAddressAdmin(order_id)
+  }  
 }

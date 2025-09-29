@@ -339,7 +339,8 @@ export class PaymentService {
       )
     }
 
-    const order = await ordersService.getOrder(external_reference)
+    // 🔐 WEBHOOK: usar ADMIN para ignorar RLS
+    const order = await ordersService.getOrderAdmin(external_reference)
     if (!order) {
       throw new PaymentPreferenceDataNotFoundException(
         "Orden no encontrada",
@@ -347,11 +348,20 @@ export class PaymentService {
       )
     }
 
-    if (order.status === "success") return
+    if (order.status === "success") return // idempotente
 
     const newStatus = collection_status === "approved" ? "success" : "pending"
-    const updatedOrder: Order = { ...order, status: newStatus }
-    await ordersService.updateOrder(updatedOrder)
+
+    // ✅ ACTUALIZAMOS también campos de pago
+    const updatedOrder: Order = {
+      ...order,
+      status: newStatus,
+      payment_status: collection_status,
+      payment_provider: "mercadopago",
+      payment_intent_id: String(payment_id),
+    }
+
+    await ordersService.updateOrderAdmin(updatedOrder) // 👈 ADMIN
 
     if (collection_status === "approved") {
       const user = await authService.getUserById(order.user_id)
@@ -359,67 +369,62 @@ export class PaymentService {
         throw new PaymentPreferenceDataNotFoundException("Usuario no encontrado", "No se encontró un usuario")
       }
 
-      const orderWithDetails = await ordersService.getOrder(order.id)
+      // Email
+      const orderWithDetails = await ordersService.getOrderAdmin(order.id) // 👈 ADMIN
       const orderItem = orderWithDetails?.order_items?.[0]
-      if (!orderItem) {
-        throw new PaymentPreferenceDataNotFoundException(
-          "Producto no encontrado en la orden",
-          "No se encontró un producto en la orden"
-        )
+      if (orderItem) {
+        const product = orderItem.product
+        const image =
+          Array.isArray(product?.imagePaths) && product.imagePaths.length > 0
+            ? product.imagePaths[0]
+            : undefined
+
+        await emailService.sendEmail({
+          customerName: user.name,
+          customerEmail: user.email,
+          productName: product?.name ?? "Tu compra",
+          productImage: image ?? "",
+          price: String(order.total_amount),
+          orderId: order.id,
+          purchaseDate: new Date(order.created_at).toISOString(),
+          accessUrl: "",
+        })
       }
 
-      const product = orderItem.product
-      const image =
-        Array.isArray(product?.imagePaths) && product.imagePaths.length > 0
-          ? product.imagePaths[0]
-          : undefined
-
-      await emailService.sendEmail({
-        customerName: user.name,
-        customerEmail: user.email,
-        productName: product?.name ?? "Tu compra",
-        productImage: image ?? "",
-        price: String(order.total_amount),
-        orderId: order.id,
-        purchaseDate: new Date(order.created_at).toISOString(),
-        accessUrl: "",
-      })
-
-      // Emisión de etiqueta (no bloqueante)
+      // 🚚 Etiqueta (no bloqueante)
       try {
         const shippingSvc = new ShippingService()
 
+        // usar ADMIN para leer address y orden
         const [addr, fullOrder] = await Promise.all([
-          ordersService.getOrderAddress(order.id),
-          ordersService.getOrder(order.id),
+          ordersService.getOrderAddressAdmin(order.id), // 👈 ADMIN
+          ordersService.getOrderAdmin(order.id),        // 👈 ADMIN
         ])
 
-        // Si no hay dirección → retiro local o sin etiqueta
-        if (!addr) {
-          console.log("[Shipping] Orden sin dirección (pickup): no se emite etiqueta.")
-          return
-        }
-        if (!fullOrder) {
-          console.log("[Shipping] Orden sin detalles: no se emite etiqueta.")
+        if (!addr || !fullOrder) {
+          console.log("[Shipping] sin address o sin detalles → no se emite etiqueta")
           return
         }
 
-        // Tomamos el importe cobrado para elegir la opción coincidente
+        // si el savedAmount es 0, probablemente era pickup: no emitir
         const savedAmount = Number((order as any).shipping_amount ?? 0)
+        if (savedAmount <= 0) {
+          console.log("[Shipping] envío $0 → pickup o sin cargo, no se emite")
+          return
+        }
 
         const quoteOpts = await shippingSvc.quote(
           fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
             product_id: oi.product_id,
             quantity: oi.quantity,
-            weight_grams: oi.product?.weightGrams, // unificado
+            weight_grams: oi.product?.weightGrams,
           })),
           addr
         )
         if (!quoteOpts?.length) throw new Error("No se obtuvieron cotizaciones de envío")
 
         const opt =
-          quoteOpts.find(o => Math.abs(o.amount - savedAmount) < 0.5) ??
-          quoteOpts[0]
+          quoteOpts.find(o => Math.abs(o.amount - savedAmount) < 0.5) ?? quoteOpts[0]
 
         const chosen = {
           method_id: opt.method_id,
@@ -436,7 +441,7 @@ export class PaymentService {
           items: fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
             product_id: oi.product_id,
             quantity: oi.quantity,
-            weight_grams: oi.product?.weightGrams, // unificado
+            weight_grams: oi.product?.weightGrams,
           })),
         })
 
