@@ -34,5 +34,6 @@ export interface OrderWithDetails extends Order {
   order_items: (OrderItem & { product: ProductType })[]
   user: PublicUser
 }
-
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "charged_back";
+export type OrderLifecycleStatus = "pending" | "success" | "cancelled" | "flagged";
 export type OrderStatus = "Completado" | "Procesando" | "Enviado" | "Pendiente"

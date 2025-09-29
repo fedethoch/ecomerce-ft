@@ -17,7 +17,18 @@ export type CreatePreferenceResponse = {
 export type UpdatePreferenceValues = {
   external_reference: string
   payment_id: string
-  collection_status: "approved" | "in_process" | "rejected" | "refunded" | "charged_back" | string
+  collection_status:
+    | "approved"
+    | "in_process"
+    | "authorized"
+    | "rejected"
+    | "cancelled"
+    | "refunded"
+    | "charged_back"
+    | string
+  // opcionales, los manda el webhook procesado:
+  paid_amount?: number
+  raw_topic?: string
 }
 
 export type FinalizePayPalValues = {

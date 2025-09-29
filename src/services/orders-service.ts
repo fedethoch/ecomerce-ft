@@ -2,7 +2,12 @@ import { OrdersRepository } from "@/repository/orders-repository"
 import { Order, OrderItem, OrderWithDetails } from "@/types/orders/types"
 import { Shipment, OrderAddress } from "@/types/shipping/types"
 import { AddressInput } from "@/types/shipping/types"
+import { createClient } from "@supabase/supabase-js";
 
+const sbAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export class OrdersService {
   private repository = new OrdersRepository()
