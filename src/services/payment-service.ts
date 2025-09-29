@@ -32,6 +32,15 @@ const shippingService = new ShippingService()
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
+const strip = (u?: string | null) => (u ?? "").replace(/\/+$/, "");
+const resolveAppUrl = () => {
+  const base =
+    strip(process.env.NEXT_PUBLIC_APP_URL) ||
+    strip(process.env.APP_URL) ||
+    (process.env.VERCEL_URL ? `https://${strip(process.env.VERCEL_URL)}` : "http://localhost:3000");
+  return /^https?:\/\//i.test(base) ? base : `https://${base}`;
+};
+
 // Helper PayPal
 function getPayPalClient() {
   const env = (process.env.PAYPAL_ENV || "sandbox").toLowerCase()
@@ -202,16 +211,18 @@ export class PaymentService {
               unit_price: round2(shippingAmountARS),
             })
           }
-
+          const appUrl = resolveAppUrl();
           const pref = (await this.mpClient.create({
+            
             body: {
               items: mpItems,
               payer: { email: user.email },
               back_urls: {
-                success: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
-                failure: `${process.env.NEXT_PUBLIC_APP_URL}/payment/failure`,
-                pending: `${process.env.NEXT_PUBLIC_APP_URL}/payment/pending`,
+                success: `${appUrl}/payment/success`,
+                failure: `${appUrl}/payment/failure`,
+                pending: `${appUrl}/payment/pending`,
               },
+              notification_url: `${appUrl}/api/mercadopago`,
               auto_return: "approved",
               external_reference: order.id,
               metadata: {
@@ -221,7 +232,6 @@ export class PaymentService {
                 shipping_amount: shippingAmountARS,
                 is_pickup: isPickup,
               },
-              notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mercadopago`,
             },
           })) as PreferenceResponse
 
