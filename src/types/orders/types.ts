@@ -7,6 +7,14 @@ export interface Order {
   created_at: string
   total_amount: number
   status: string
+  currency?: string
+  payment_status?: string
+  payment_provider?: string
+  payment_intent_id?: string
+  shipping_address_id?: string | null
+  billing_address_id?: string | null
+  shipping_method_id?: string | null
+  shipping_status?: string | null
   user?: PublicUser
 }
 
@@ -17,10 +25,9 @@ export interface OrderItem {
   quantity: number
   price: number
   unit_price?: number | null
-  product_name?: string | null
   currency?: string | null
-  created_at?: string
-  product?: ProductType
+  product_name?: string | null
+
 }
 
 export interface OrderWithDetails extends Order {

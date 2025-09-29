@@ -339,7 +339,7 @@ export class PaymentService {
       )
     }
 
-    // 🔐 WEBHOOK: usar ADMIN para ignorar RLS
+    
     const order = await ordersService.getOrderAdmin(external_reference)
     if (!order) {
       throw new PaymentPreferenceDataNotFoundException(
@@ -361,7 +361,12 @@ export class PaymentService {
       payment_intent_id: String(payment_id),
     }
 
-    await ordersService.updateOrderAdmin(updatedOrder) // 👈 ADMIN
+      await ordersService.updateOrderFieldsAdmin(external_reference, {
+    status: newStatus,
+    payment_status: collection_status,     // ej: "approved"
+    payment_provider: "mercadopago",
+    payment_intent_id: String(payment_id),
+  })
 
     if (collection_status === "approved") {
       const user = await authService.getUserById(order.user_id)

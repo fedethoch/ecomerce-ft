@@ -241,4 +241,17 @@ export class OrdersRepository {
     if (error && error.code !== "PGRST116") throw error
     return (data as OrderAddress) ?? null
   }
+
+  async updateOrderFieldsAdmin(id: string, patch: Partial<Order>): Promise<Order> {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from("orders")
+      .update(patch)
+      .eq("id", id)
+      .select("*")
+      .single()
+
+    if (error) throw error
+    return data as Order
+  }
 }

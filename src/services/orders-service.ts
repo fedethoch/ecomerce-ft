@@ -71,4 +71,8 @@ export class OrdersService {
   async getOrderAddressAdmin(order_id: string): Promise<OrderAddress | null> {
     return this.repository.getOrderAddressAdmin(order_id)
   }  
+
+  async updateOrderFieldsAdmin(id: string, patch: Partial<Order>): Promise<Order> {
+    return this.repository.updateOrderFieldsAdmin(id, patch)
+  }
 }
