@@ -16,6 +16,7 @@ export interface OrderItem {
   product_id: string
   quantity: number
   price: number
+  unit_price?: number
   product?: ProductType
 }
 

@@ -164,7 +164,7 @@ export class PaymentService {
             total_amount: totalARS,
             status: "pending",
             shipping_amount: shippingAmountARS,
-            shipping_method_id: isPickup ? null : null,
+            shipping_method_id: (chosenMethodId ?? null),
           } as Partial<Order> as Order)
 
           await Promise.all(
@@ -392,10 +392,18 @@ export class PaymentService {
           ordersService.getOrderAddress(order.id),
           ordersService.getOrder(order.id),
         ]);
+
+        // 👉 Si no hay address, asumimos retiro o que no corresponde etiqueta
         if (!addr) {
           console.log("[Shipping] Orden sin dirección (pickup): no se emite etiqueta.");
           return;
         }
+
+      // 👉 TS: fullOrder puede ser null; salimos temprano
+      if (!fullOrder) {
+        console.log("[Shipping] Orden sin detalles: no se emite etiqueta.");
+        return;
+      }
 
         type ChosenOption = {
           method_id: string
