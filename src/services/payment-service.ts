@@ -173,7 +173,11 @@ export class PaymentService {
                 order_id: order.id,
                 product_id: product.id,
                 quantity,
+                // si en tu modelo "price" es unitario, mantenelo así; si es total de línea, usa product.price * quantity
                 price: round2(product.price),
+                unit_price: round2(product.price),
+                product_name: product.name,
+                currency: "ARS",
               })
             )
           )
@@ -202,6 +206,7 @@ export class PaymentService {
           const pref = (await this.mpClient.create({
             body: {
               items: mpItems,
+              payer: { email: user.email },
               back_urls: {
                 success: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
                 failure: `${process.env.NEXT_PUBLIC_APP_URL}/payment/failure`,

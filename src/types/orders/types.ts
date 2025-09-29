@@ -16,7 +16,10 @@ export interface OrderItem {
   product_id: string
   quantity: number
   price: number
-  unit_price?: number
+  unit_price?: number | null
+  product_name?: string | null
+  currency?: string | null
+  created_at?: string
   product?: ProductType
 }
 
