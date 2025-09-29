@@ -32,16 +32,17 @@ const shippingService = new ShippingService()
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 
-const strip = (u?: string | null) => (u ?? "").replace(/\/+$/, "");
+// ====== URL helpers para back_urls / webhooks ======
+const strip = (u?: string | null) => (u ?? "").replace(/\/+$/, "")
 const resolveAppUrl = () => {
   const base =
     strip(process.env.NEXT_PUBLIC_APP_URL) ||
     strip(process.env.APP_URL) ||
-    (process.env.VERCEL_URL ? `https://${strip(process.env.VERCEL_URL)}` : "http://localhost:3000");
-  return /^https?:\/\//i.test(base) ? base : `https://${base}`;
-};
+    (process.env.VERCEL_URL ? `https://${strip(process.env.VERCEL_URL)}` : "http://localhost:3000")
+  return /^https?:\/\//i.test(base) ? base : `https://${base}`
+}
 
-// Helper PayPal
+// ====== PayPal helper ======
 function getPayPalClient() {
   const env = (process.env.PAYPAL_ENV || "sandbox").toLowerCase()
   const clientId = process.env.PAYPAL_CLIENT_ID as string
@@ -69,22 +70,7 @@ export class PaymentService {
     const config = new MercadoPagoConfig({ accessToken })
     this.mpClient = new Preference(config)
   }
-  private async loadItems(items: { product_id: string; quantity: number }[]) {
-  // ⚠️ reconstruí título y unit_price desde tu DB por seguridad
-  // return [{ title, unit_price, quantity }]
-  }
 
-  private async verifyCostByMethodId(methodId: string): Promise<number> {
-    // ⚠️ validá contra tu tabla/tarifario (NO confíes en el front)
-    // ej: if (methodId === "andreani_std") return 3499;
-    // throw si el id no existe
-    return 0;
-  }
-
-  private buildExternalRef(input: { shipping_id: string; ts: number }) {
-    // Evitá reutilizar preferencias cuando cambia el envío
-    return `order-${input.shipping_id}-${input.ts}`;
-  }
   // MP + PayPal. Incluye cálculo de envío.
   async createPreference(body: CreatePreferenceValues): Promise<CreatePreferenceResponse> {
     const { payment_method, items } = body
@@ -103,7 +89,7 @@ export class PaymentService {
       throw err
     }
 
-    // 1) Cargar productos y validar (igual que tenías)
+    // 1) Cargar productos y validar
     const lines = await Promise.all(
       items.map(async ({ product_id, quantity }) => {
         if (!product_id || !quantity || quantity <= 0) {
@@ -119,7 +105,7 @@ export class PaymentService {
 
     const subtotalARS = round2(lines.reduce((acc, { product, quantity }) => acc + product.price * quantity, 0))
 
-    // 2) Envío: RESPETAR ELECCIÓN
+    // 2) Envío: respetar la elección del usuario
     const address = (body as any).address as AddressInput | undefined
     const chosenMethodId = (body as any).shipping_method_id as string | undefined
     if (!chosenMethodId) {
@@ -130,12 +116,9 @@ export class PaymentService {
 
     let shippingAmountARS = 0
     if (!isPickup) {
-      // Para carrier SÍ exigimos dirección
       if (!address?.state || !address?.postal_code) {
         throw new PaymentPreferenceDataNotFoundException("Dirección incompleta", "Completá provincia y código postal")
       }
-
-      // Cotizamos y buscamos EXACTAMENTE el método elegido
       try {
         const shippingOptions = await shippingService.quote(
           items.map(i => ({ product_id: i.product_id, quantity: i.quantity })),
@@ -150,30 +133,30 @@ export class PaymentService {
           )
         }
         shippingAmountARS = round2(chosen.amount)
-      } catch (e) {
-        // Si falla la cotización, no forzamos un carrier diferente
+      } catch {
         throw new PaymentPreferenceDataNotFoundException(
           "Error al cotizar envío",
           "No se pudo cotizar el envío; por favor, volvé a seleccionar el método."
         )
       }
     } else {
-      // pickup: costo $0 y NO cotizamos
       shippingAmountARS = 0
     }
 
     const totalARS = round2(subtotalARS + shippingAmountARS)
+    const appUrl = resolveAppUrl()
 
-    // 3) Según método de pago (Mercado Pago)
+    // 3) Según método de pago
     switch (payment_method) {
       case "mercadopago": {
         try {
+          // ⚠️ shipping_method_id en DB es UUID → NO guardamos "pickup"/strings
           const order = await ordersService.createOrder({
             user_id: user.id,
             total_amount: totalARS,
             status: "pending",
             shipping_amount: shippingAmountARS,
-            shipping_method_id: (chosenMethodId ?? null),
+            shipping_method_id: null, // <— clave del fix (evita 22P02)
           } as Partial<Order> as Order)
 
           await Promise.all(
@@ -182,7 +165,6 @@ export class PaymentService {
                 order_id: order.id,
                 product_id: product.id,
                 quantity,
-                // si en tu modelo "price" es unitario, mantenelo así; si es total de línea, usa product.price * quantity
                 price: round2(product.price),
                 unit_price: round2(product.price),
                 product_name: product.name,
@@ -201,7 +183,6 @@ export class PaymentService {
             })),
           ] as any[]
 
-          // 👇 Sólo agregamos "Envío" como ítem si NO es pickup y el costo > 0
           if (!isPickup && shippingAmountARS > 0) {
             mpItems.push({
               id: "shipping",
@@ -211,9 +192,8 @@ export class PaymentService {
               unit_price: round2(shippingAmountARS),
             })
           }
-          const appUrl = resolveAppUrl();
+
           const pref = (await this.mpClient.create({
-            
             body: {
               items: mpItems,
               payer: { email: user.email },
@@ -228,7 +208,7 @@ export class PaymentService {
               metadata: {
                 order_id: order.id,
                 user_id: user.id,
-                shipping_method_id: chosenMethodId ?? null,
+                shipping_method_code: chosenMethodId ?? null, // <— guardamos el código aquí
                 shipping_amount: shippingAmountARS,
                 is_pickup: isPickup,
               },
@@ -244,13 +224,20 @@ export class PaymentService {
           const status = error?.status ?? error?.error?.status ?? 502
           const providerMsg =
             error?.error?.message || error?.message || "No se pudo crear la preferencia de pago en Mercado Pago"
+          const cause = Array.isArray(error?.error?.cause) ? error.error.cause : []
 
-          const ex: any = new PaymentException("Error al crear la preferencia de pago", providerMsg)
+          console.error("[MP] createPreference error:", {
+            status,
+            message: providerMsg,
+            cause,
+            raw: error?.error ?? error,
+          })
+
+          const ex: any = new PaymentException("Error al procesar el pago", providerMsg)
           ex.name = "PaymentException"
           ex.statusCode = status
           ex.provider = "mercadopago"
           ex.raw = error
-          console.error("[MP] createPreference error:", providerMsg, error)
           throw ex
         }
       }
@@ -277,6 +264,9 @@ export class PaymentService {
                 product_id: product.id,
                 quantity,
                 price: toUSD(product.price),
+                unit_price: toUSD(product.price),
+                product_name: product.name,
+                currency: "USD",
               })
             )
           )
@@ -288,16 +278,13 @@ export class PaymentService {
             intent: "CAPTURE",
             purchase_units: [
               {
-                amount: {
-                  currency_code: "USD",
-                  value: totalUSD.toFixed(2),
-                },
+                amount: { currency_code: "USD", value: totalUSD.toFixed(2) },
                 custom_id: order.id,
               },
             ],
             application_context: {
-              return_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/paypal/success`,
-              cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/paypal/cancel`,
+              return_url: `${appUrl}/payment/paypal/success`,
+              cancel_url: `${appUrl}/payment/paypal/cancel`,
             },
           })
 
@@ -313,12 +300,13 @@ export class PaymentService {
           const providerMsg =
             error?.result?.message || error?.message || "No se pudo crear la orden en PayPal"
 
+          console.error("[PayPal] createOrder error:", providerMsg, error)
+
           const ex: any = new PaymentException("Error al crear la orden de PayPal", providerMsg)
           ex.name = "PaymentException"
           ex.statusCode = status
           ex.provider = "paypal"
           ex.raw = error
-          console.error("[PayPal] createOrder error:", providerMsg, error)
           throw ex
         }
       }
@@ -401,70 +389,44 @@ export class PaymentService {
       try {
         const shippingSvc = new ShippingService()
 
-        
-
         const [addr, fullOrder] = await Promise.all([
           ordersService.getOrderAddress(order.id),
           ordersService.getOrder(order.id),
-        ]);
+        ])
 
-        // 👉 Si no hay address, asumimos retiro o que no corresponde etiqueta
+        // Si no hay dirección → retiro local o sin etiqueta
         if (!addr) {
-          console.log("[Shipping] Orden sin dirección (pickup): no se emite etiqueta.");
-          return;
-        }
-
-      // 👉 TS: fullOrder puede ser null; salimos temprano
-      if (!fullOrder) {
-        console.log("[Shipping] Orden sin detalles: no se emite etiqueta.");
-        return;
-      }
-
-        type ChosenOption = {
-          method_id: string
-          label: string
-          amount: number
-          provider: string
-          service_level: "standard" | "express" | "pickup"
-        }
-
-        let chosen: ChosenOption | null = null
-        const savedMethodId = (order as any).shipping_method_id as string | undefined
-        if (savedMethodId === "pickup") {
-          console.log("[Shipping] Orden con retiro en local: no se emite etiqueta.")
+          console.log("[Shipping] Orden sin dirección (pickup): no se emite etiqueta.")
           return
         }
-        const savedAmount = Number((order as any).shipping_amount ?? 0)
-
-        if (savedMethodId) {
-          chosen = {
-            method_id: String(savedMethodId),
-            label: "Envío",
-            amount: savedAmount,
-            provider: "andreani",
-            service_level: "standard",
-          }
+        if (!fullOrder) {
+          console.log("[Shipping] Orden sin detalles: no se emite etiqueta.")
+          return
         }
 
-        if (!chosen || !(chosen.amount >= 0)) {
-          const quoteOpts = await shippingSvc.quote(
-            fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
-              product_id: oi.product_id,
-              quantity: oi.quantity,
-              weight_grams: oi.product?.weightGrams,
-            })),
-            addr
-          )
-          if (!quoteOpts?.length) throw new Error("No se obtuvieron cotizaciones de envío")
+        // Tomamos el importe cobrado para elegir la opción coincidente
+        const savedAmount = Number((order as any).shipping_amount ?? 0)
 
-          const opt = quoteOpts.find(o => o.method_id === savedMethodId) ?? quoteOpts[0]
-          chosen = {
-            method_id: opt.method_id,
-            label: opt.label,
-            amount: opt.amount,
-            provider: opt.provider ?? "andreani",
-            service_level: opt.service_level,
-          }
+        const quoteOpts = await shippingSvc.quote(
+          fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
+            product_id: oi.product_id,
+            quantity: oi.quantity,
+            weight_grams: oi.product?.weightGrams, // unificado
+          })),
+          addr
+        )
+        if (!quoteOpts?.length) throw new Error("No se obtuvieron cotizaciones de envío")
+
+        const opt =
+          quoteOpts.find(o => Math.abs(o.amount - savedAmount) < 0.5) ??
+          quoteOpts[0]
+
+        const chosen = {
+          method_id: opt.method_id,
+          label: opt.label,
+          amount: opt.amount,
+          provider: opt.provider ?? "andreani",
+          service_level: opt.service_level as "standard" | "express" | "pickup",
         }
 
         const buyRes = await shippingSvc.buyLabelForOrder({
@@ -474,7 +436,7 @@ export class PaymentService {
           items: fullOrder.order_items.map((oi: OrderWithDetails["order_items"][number]) => ({
             product_id: oi.product_id,
             quantity: oi.quantity,
-            weight_grams: oi.product?.weightGrams,
+            weight_grams: oi.product?.weightGrams, // unificado
           })),
         })
 
