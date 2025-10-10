@@ -327,11 +327,31 @@ export default function ProfilePage() {
           </CardHeader>
         </Card>
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="orders">Pedidos</TabsTrigger>
-            <TabsTrigger value="addresses">Direcciones</TabsTrigger>
-            <TabsTrigger value="security">Seguridad</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-white  rounded-lg border border-border">
+            <TabsTrigger
+              value="profile"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
+            >
+              Perfil
+            </TabsTrigger>
+            <TabsTrigger
+              value="orders"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
+            >
+              Pedidos
+            </TabsTrigger>
+            <TabsTrigger
+              value="addresses"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
+            >
+              Direcciones
+            </TabsTrigger>
+            <TabsTrigger
+              value="security"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
+            >
+              Seguridad
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
