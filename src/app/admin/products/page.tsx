@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, MoreHorizontal, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -50,34 +51,57 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-      >
+      <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
           <p className="text-muted-foreground">Cargando productos...</p>
         </div>
+        {/* Skeleton loader for products */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-40 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-      >
+      <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
           <p className="text-destructive">{error}</p>
         </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10 gap-4">
+            <AlertTriangle className="h-10 w-10 text-destructive" />
+            <p className="text-lg font-medium">Ocurrió un error al cargar los productos</p>
+            <Button variant="outline" onClick={refetch}>
+              Intentar de nuevo
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-    >
+    <div className="space-y-6">
       <div className="flex items-center justify-between w-full">
         <div className="w-full">
           <h1 className="text-3xl font-bold tracking-tight">Productos</h1>

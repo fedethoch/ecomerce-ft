@@ -1,12 +1,30 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import { Eye, Edit, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SearchFilterBar } from "@/components/admin/search-filter-bar";
 import { useCustomers } from "@/hooks/use-customers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,14 +34,14 @@ export default function CustomersView() {
   const { customers, loading, error, refetch } = useCustomers();
   const { open } = useAdminLayout();
   return (
-    <div className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}>
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
         <p className="text-muted-foreground">Gestiona tu base de clientes</p>
       </div>
 
-      <SearchFilterBar 
-        placeholder="Buscar clientes..." 
+      <SearchFilterBar
+        placeholder="Buscar clientes..."
         onSearch={(term) => console.log("Buscar:", term)}
       />
 
@@ -77,7 +95,9 @@ export default function CustomersView() {
                     <TableCell>{customer.email}</TableCell>
                     <TableCell>{customer.orders}</TableCell>
                     <TableCell>${customer.spent}</TableCell>
-                    <TableCell>{new Date(customer.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(customer.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

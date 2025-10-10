@@ -7,7 +7,7 @@ import { ProductFilters } from "@/components/products/product-filters";
 import { ProductList } from "@/components/products/product-list";
 import { ProductPagination } from "@/components/products/product-pagination";
 import { getProducts } from "@/controllers/products-controller";
-import { ProductType } from "@/types/products/products";
+import type { ProductType } from "@/types/products/products";
 import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler";
 import { AppActionException } from "@/types/exceptions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +40,7 @@ export default function ProductPageClient() {
     const priceMin = params.get("priceMin");
     const priceMax = params.get("priceMax");
     const sizes = params.get("sizes");
+    const search = params.get("search") || undefined;
     const parsedPriceRange =
       priceMin || priceMax
         ? [Number(priceMin) || 0, Number(priceMax) || 100000]
@@ -63,7 +64,7 @@ export default function ProductPageClient() {
 
     const mappedCategoryFromType = typeParam
       ? (typeToFilterCategory[typeParam.toLowerCase().trim()] ??
-          typeParam.toLowerCase().trim())
+        typeParam.toLowerCase().trim())
       : undefined;
 
     const parsedInitialFilters = {
@@ -73,6 +74,7 @@ export default function ProductPageClient() {
         : {}),
       ...(parsedPriceRange ? { priceRange: parsedPriceRange } : {}),
       ...(parsedSizes ? { sizes: parsedSizes } : {}),
+      ...(search ? { search } : {}),
     };
     setInitialFilters(parsedInitialFilters);
 
@@ -90,6 +92,15 @@ export default function ProductPageClient() {
             Object.keys(parsedInitialFilters).length > 0
           ) {
             let filtered = [...data];
+            if (parsedInitialFilters.search) {
+              const searchLower = parsedInitialFilters.search.toLowerCase();
+              filtered = filtered.filter(
+                (product) =>
+                  product.name.toLowerCase().includes(searchLower) ||
+                  (product.description &&
+                    product.description.toLowerCase().includes(searchLower))
+              );
+            }
             if (
               parsedInitialFilters.category &&
               parsedInitialFilters.category !== "all"
@@ -143,7 +154,9 @@ export default function ProductPageClient() {
   }, [searchParams?.toString()]);
 
   const normalize = (s: unknown) =>
-    String(s ?? "").toLowerCase().trim();
+    String(s ?? "")
+      .toLowerCase()
+      .trim();
 
   const categoryMatches = (
     selected: string | undefined | null,
@@ -154,13 +167,28 @@ export default function ProductPageClient() {
     if (!sel || sel === "all") return true;
 
     const variants: Record<string, string[]> = {
-      hombre: ["hombre", "hombres", "man", "men", "masculino", "varon", "varones"],
+      hombre: [
+        "hombre",
+        "hombres",
+        "man",
+        "men",
+        "masculino",
+        "varon",
+        "varones",
+      ],
       mujer: ["mujer", "mujeres", "woman", "women", "femenino"],
       accesorios: ["accesorio", "accesorios", "accessories"],
       camisetas: ["camiseta", "camisetas", "tshirt", "tee", "polera", "remera"],
       pantalones: ["pantalon", "pantalones", "pants", "trousers", "jeans"],
       vestidos: ["vestido", "vestidos", "dress", "dresses"],
-      chaquetas: ["chaqueta", "chaquetas", "jacket", "jackets", "abrigo", "abrigos"],
+      chaquetas: [
+        "chaqueta",
+        "chaquetas",
+        "jacket",
+        "jackets",
+        "abrigo",
+        "abrigos",
+      ],
       calzado: ["calzado", "zapato", "zapatos", "shoes", "footwear"],
     };
 
@@ -170,6 +198,16 @@ export default function ProductPageClient() {
 
   const handleFilterChange = (filters: any) => {
     let filtered = [...products];
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchLower) ||
+          (product.description &&
+            product.description.toLowerCase().includes(searchLower))
+      );
+    }
 
     if (filters.category && filters.category !== "all") {
       filtered = filtered.filter((product) =>
@@ -196,6 +234,7 @@ export default function ProductPageClient() {
 
     try {
       const params = new URLSearchParams();
+      if (filters.search) params.set("search", filters.search);
       if (filters.category && filters.category !== "all")
         params.set("category", filters.category);
       if (filters.priceRange) {
@@ -210,6 +249,18 @@ export default function ProductPageClient() {
       console.warn("Could not update URL with filters", e);
     }
   };
+
+  // Scroll to top whenever the current page changes (pagination)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {
+        // fallback
+        window.scrollTo(0, 0);
+      }
+    }
+  }, [currentPage]);
 
   if (isLoading) {
     return (

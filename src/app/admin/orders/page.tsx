@@ -1,8 +1,15 @@
 "use client";
 
-import { Eye, Edit, MoreHorizontal, Loader2 } from "lucide-react";
+import {
+  Eye,
+  Edit,
+  MoreHorizontal,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -49,34 +56,57 @@ export default function OrdersView() {
 
   if (loading) {
     return (
-      <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-      >
+      <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
           <p className="text-muted-foreground">Cargando pedidos...</p>
         </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Pedidos</CardTitle>
+            <CardDescription>Cargando todos los pedidos...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-4 w-[150px]" />
+                  </div>
+                  <Skeleton className="ml-auto h-4 w-[100px]" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-      >
+      <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
           <p className="text-destructive">{error}</p>
         </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-10 gap-4">
+            <AlertTriangle className="h-10 w-10 text-destructive" />
+            <p className="text-lg font-medium">Error al cargar los pedidos</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Intentar de nuevo
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-    >
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
         <p className="text-muted-foreground">

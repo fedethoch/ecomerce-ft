@@ -3,7 +3,7 @@
 import type React from "react";
 import { useCart } from "@/context/cart-context";
 
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,23 +30,136 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+
+const categories = [
+  {
+    name: "Nuevo",
+    href: "/productos?category=nuevo",
+    subcategories: [
+      {
+        name: "Últimas llegadas",
+        href: "/productos?category=nuevo&sort=latest",
+      },
+      { name: "Tendencias", href: "/productos?category=nuevo&featured=true" },
+    ],
+  },
+  {
+    name: "Hombre",
+    href: "/productos?category=hombre",
+    subcategories: [
+      { name: "Remeras", href: "/productos?category=hombre&type=remeras" },
+      {
+        name: "Pantalones",
+        href: "/productos?category=hombre&type=pantalones",
+      },
+      { name: "Buzos", href: "/productos?category=hombre&type=buzos" },
+      { name: "Camperas", href: "/productos?category=hombre&type=camperas" },
+      { name: "Calzado", href: "/productos?category=hombre&type=calzado" },
+    ],
+  },
+  {
+    name: "Mujer",
+    href: "/productos?category=mujer",
+    subcategories: [
+      { name: "Remeras", href: "/productos?category=mujer&type=remeras" },
+      {
+        name: "Pantalones",
+        href: "/productos?category=mujer&type=pantalones",
+      },
+      { name: "Buzos", href: "/productos?category=mujer&type=buzos" },
+      { name: "Camperas", href: "/productos?category=mujer&type=camperas" },
+      { name: "Calzado", href: "/productos?category=mujer&type=calzado" },
+    ],
+  },
+  {
+    name: "Niño/a",
+    href: "/productos?category=ninos",
+    subcategories: [
+      { name: "Niños", href: "/productos?category=ninos&gender=boys" },
+      { name: "Niñas", href: "/productos?category=ninos&gender=girls" },
+      { name: "Bebés", href: "/productos?category=ninos&age=baby" },
+    ],
+  },
+  {
+    name: "Accesorios",
+    href: "/productos?category=accesorios",
+    subcategories: [
+      { name: "Gorras", href: "/productos?category=accesorios&type=gorras" },
+      {
+        name: "Relojes",
+        href: "/productos?category=accesorios&type=relojes",
+      },
+      {
+        name: "Carteras",
+        href: "/productos?category=accesorios&type=carteras",
+      },
+      {
+        name: "Cinturones",
+        href: "/productos?category=accesorios&type=cinturones",
+      },
+    ],
+  },
+  {
+    name: "Ofertas",
+    href: "/productos?category=ofertas",
+    subcategories: [
+      {
+        name: "Hasta 30% OFF",
+        href: "/productos?category=ofertas&discount=30",
+      },
+      {
+        name: "Hasta 50% OFF",
+        href: "/productos?category=ofertas&discount=50",
+      },
+      {
+        name: "Liquidación",
+        href: "/productos?category=ofertas&clearance=true",
+      },
+    ],
+  },
+];
 
 export function Navbar() {
   const router = useRouter();
   const { cart, setIsOpen, isOpen } = useCart();
   const [cartItems, setCartItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const pathname = usePathname();
 
   const [suggestions, setSuggestions] = useState<
-    Array<{ type: "product" | "category"; name: string; href?: string }>
+    Array<{
+      type: "product" | "category";
+      name: string;
+      href?: string;
+      image?: string;
+      price?: number;
+    }>
+  >([]);
+  const [mobileSuggestions, setMobileSuggestions] = useState<
+    Array<{
+      type: "product" | "category";
+      name: string;
+      href?: string;
+      image?: string;
+      price?: number;
+    }>
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showMobileSuggestions, setShowMobileSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   // Estado para el usuario autenticado
   const [user, setUser] = useState<any>(null);
@@ -117,12 +230,14 @@ export function Navbar() {
       type: "product" | "category";
       name: string;
       href?: string;
+      image?: string;
+      price?: number;
     }> = [];
 
     try {
       const { data: products } = await supabase
         .from("products")
-        .select("name, id")
+        .select("name, id, image_url, price")
         .ilike("name", `%${query}%`)
         .limit(5);
 
@@ -132,6 +247,8 @@ export function Navbar() {
             type: "product",
             name: product.name,
             href: `/productos/${product.id}`,
+            image: product.image_url,
+            price: product.price,
           });
         });
       }
@@ -169,6 +286,73 @@ export function Navbar() {
     }
   };
 
+  const fetchMobileSuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setMobileSuggestions([]);
+      return;
+    }
+
+    const supabase = createClient();
+    const suggestions: Array<{
+      type: "product" | "category";
+      name: string;
+      href?: string;
+      image?: string;
+      price?: number;
+    }> = [];
+
+    try {
+      const { data: products } = await supabase
+        .from("products")
+        .select("name, id, image_url, price")
+        .ilike("name", `%${query}%`)
+        .limit(5);
+
+      if (products) {
+        products.forEach((product) => {
+          suggestions.push({
+            type: "product",
+            name: product.name,
+            href: `/productos/${product.id}`,
+            image: product.image_url,
+            price: product.price,
+          });
+        });
+      }
+
+      const categoryMatches = categories.filter(
+        (cat) =>
+          cat.name.toLowerCase().includes(query.toLowerCase()) ||
+          cat.subcategories.some((sub) =>
+            sub.name.toLowerCase().includes(query.toLowerCase())
+          )
+      );
+
+      categoryMatches.forEach((cat) => {
+        if (cat.name.toLowerCase().includes(query.toLowerCase())) {
+          suggestions.push({
+            type: "category",
+            name: cat.name,
+            href: cat.href,
+          });
+        }
+        cat.subcategories.forEach((sub) => {
+          if (sub.name.toLowerCase().includes(query.toLowerCase())) {
+            suggestions.push({
+              type: "category",
+              name: sub.name,
+              href: sub.href,
+            });
+          }
+        });
+      });
+
+      setMobileSuggestions(suggestions.slice(0, 8));
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+    }
+  };
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -184,6 +368,20 @@ export function Navbar() {
   }, [searchQuery]);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (mobileSearchQuery.trim()) {
+        fetchMobileSuggestions(mobileSearchQuery.trim());
+        setShowMobileSuggestions(true);
+      } else {
+        setMobileSuggestions([]);
+        setShowMobileSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [mobileSearchQuery]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         searchRef.current &&
@@ -191,6 +389,12 @@ export function Navbar() {
       ) {
         setShowSuggestions(false);
         setIsSearchFocused(false);
+      }
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target as Node)
+      ) {
+        setShowMobileSuggestions(false);
       }
     };
 
@@ -224,10 +428,32 @@ export function Navbar() {
     }
   };
 
+  const handleMobileSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mobileSearchQuery.trim()) {
+      const newRecentSearches = [
+        mobileSearchQuery.trim(),
+        ...recentSearches.filter((s) => s !== mobileSearchQuery.trim()),
+      ].slice(0, 5);
+      setRecentSearches(newRecentSearches);
+      localStorage.setItem(
+        "recent-searches",
+        JSON.stringify(newRecentSearches)
+      );
+
+      setShowMobileSuggestions(false);
+      router.push(
+        `/productos?search=${encodeURIComponent(mobileSearchQuery.trim())}`
+      );
+    }
+  };
+
   const handleSuggestionClick = (suggestion: {
     type: "product" | "category";
     name: string;
     href?: string;
+    image?: string;
+    price?: number;
   }) => {
     if (suggestion.href) {
       setSearchQuery("");
@@ -240,110 +466,49 @@ export function Navbar() {
     }
   };
 
-  const categories = [
-    {
-      name: "Nuevo",
-      href: "/productos?category=nuevo",
-      subcategories: [
-        {
-          name: "Últimas llegadas",
-          href: "/productos?category=nuevo&sort=latest",
-        },
-        { name: "Tendencias", href: "/productos?category=nuevo&featured=true" },
-      ],
-    },
-    {
-      name: "Hombre",
-      href: "/productos?category=hombre",
-      subcategories: [
-        { name: "Remeras", href: "/productos?category=hombre&type=remeras" },
-        {
-          name: "Pantalones",
-          href: "/productos?category=hombre&type=pantalones",
-        },
-        { name: "Buzos", href: "/productos?category=hombre&type=buzos" },
-        { name: "Camperas", href: "/productos?category=hombre&type=camperas" },
-        { name: "Calzado", href: "/productos?category=hombre&type=calzado" },
-      ],
-    },
-    {
-      name: "Mujer",
-      href: "/productos?category=mujer",
-      subcategories: [
-        { name: "Remeras", href: "/productos?category=mujer&type=remeras" },
-        {
-          name: "Pantalones",
-          href: "/productos?category=mujer&type=pantalones",
-        },
-        { name: "Buzos", href: "/productos?category=mujer&type=buzos" },
-        { name: "Camperas", href: "/productos?category=mujer&type=camperas" },
-        { name: "Calzado", href: "/productos?category=mujer&type=calzado" },
-      ],
-    },
-    {
-      name: "Niño/a",
-      href: "/productos?category=ninos",
-      subcategories: [
-        { name: "Niños", href: "/productos?category=ninos&gender=boys" },
-        { name: "Niñas", href: "/productos?category=ninos&gender=girls" },
-        { name: "Bebés", href: "/productos?category=ninos&age=baby" },
-      ],
-    },
-    {
-      name: "Accesorios",
-      href: "/productos?category=accesorios",
-      subcategories: [
-        { name: "Gorras", href: "/productos?category=accesorios&type=gorras" },
-        {
-          name: "Relojes",
-          href: "/productos?category=accesorios&type=relojes",
-        },
-        {
-          name: "Carteras",
-          href: "/productos?category=accesorios&type=carteras",
-        },
-        {
-          name: "Cinturones",
-          href: "/productos?category=accesorios&type=cinturones",
-        },
-      ],
-    },
-    {
-      name: "Ofertas",
-      href: "/productos?category=ofertas",
-      subcategories: [
-        {
-          name: "Hasta 30% OFF",
-          href: "/productos?category=ofertas&discount=30",
-        },
-        {
-          name: "Hasta 50% OFF",
-          href: "/productos?category=ofertas&discount=50",
-        },
-        {
-          name: "Liquidación",
-          href: "/productos?category=ofertas&clearance=true",
-        },
-      ],
-    },
-  ];
+  const handleMobileSuggestionClick = (suggestion: {
+    type: "product" | "category";
+    name: string;
+    href?: string;
+    image?: string;
+    price?: number;
+  }) => {
+    if (suggestion.href) {
+      setMobileSearchQuery("");
+      setShowMobileSuggestions(false);
+      router.push(suggestion.href);
+    } else {
+      setMobileSearchQuery(suggestion.name);
+      setShowMobileSuggestions(false);
+      handleMobileSearch(new Event("submit") as any);
+    }
+  };
 
-  if (pathname.includes("/admin")) {
+  if (
+    pathname.includes("/admin") ||
+    pathname.includes("/login") ||
+    pathname.includes("/register")
+  ) {
     return null;
   }
 
   return (
     <>
       <header className="sticky top-0 z-50 h-[80px] w-full border-b border-[#E7E5E4] bg-[#F8F7F4]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F8F7F4]/90 shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className=" flex h-20 items-center">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex h-20 items-center">
             {/* Left Section - Logo and Admin Button */}
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-lg transform transition-transform hover:scale-105">
-                  <span className="text-white text-xl font-bold">S</span>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link
+                href="/"
+                className="flex items-center space-x-2 sm:space-x-3"
+              >
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-lg transform transition-transform hover:scale-105">
+                  <span className="text-white text-lg sm:text-xl font-bold">
+                    S
+                  </span>
                 </div>
-                <span className="text-[#0B1220] text-2xl font-bold tracking-tight">
+                <span className="text-[#0B1220] text-xl sm:text-2xl font-bold tracking-tight">
                   StyleHub
                 </span>
               </Link>
@@ -416,18 +581,18 @@ export function Navbar() {
             </div>
 
             {/* Right Section - Search, User, Cart */}
-            <div className="flex flex-1 items-center justify-end space-x-4">
+            <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4">
               <div
                 className="hidden items-center transition-all duration-300 ease-in-out md:flex"
                 ref={searchRef}
               >
                 <form onSubmit={handleSearch} className="relative">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform h-4 w-4 text-[#6B7280]" />
                     <Input
                       placeholder="Buscar productos..."
                       className={cn(
-                        "rounded-xl border-[#E7E5E4] bg-white pl-10 pr-4 py-3 text-[#0B1220] placeholder:text-[#6B7280] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A] shadow-sm",
+                        "rounded-xl border-[#E7E5E4] bg-white pl-10 pr-4 py-3 text-[#0B1220] placeholder:text-[#6B7280] focus-visible:ring-2 focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A] shadow-sm",
                         isSearchFocused ? "w-70" : "w-52"
                       )}
                       value={searchQuery}
@@ -449,7 +614,7 @@ export function Navbar() {
                     />
 
                     {showSuggestions && (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-hidden rounded-xl border border-[#E7E5E4] bg-white shadow-2xl backdrop-blur-sm">
+                      <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-xl border border-[#E7E5E4] bg-white shadow-2xl backdrop-blur-sm">
                         {suggestions.length > 0 && (
                           <div className="p-4">
                             <div className="mb-3 flex items-center gap-2 px-3 py-2">
@@ -467,17 +632,40 @@ export function Navbar() {
                                     handleSuggestionClick(suggestion)
                                   }
                                 >
-                                  <div className="flex-shrink-0">
-                                    {suggestion.type === "product" ? (
-                                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-sm transition-transform duration-200 group-hover:scale-110" />
-                                    ) : (
-                                      <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#8B1E3F] to-[#711732] shadow-sm transition-transform duration-200 group-hover:scale-110" />
-                                    )}
-                                  </div>
+                                  {suggestion.type === "product" &&
+                                  suggestion.image ? (
+                                    <div className="flex-shrink-0">
+                                      <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-[#E7E5E4] shadow-sm">
+                                        <Image
+                                          src={
+                                            suggestion.image ||
+                                            "/placeholder.svg"
+                                          }
+                                          alt={suggestion.name}
+                                          fill
+                                          className="object-cover"
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex-shrink-0">
+                                      {suggestion.type === "product" ? (
+                                        <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-sm transition-transform duration-200 group-hover:scale-110" />
+                                      ) : (
+                                        <div className="h-3 w-3 rounded-full bg-gradient-to-br from-[#8B1E3F] to-[#711732] shadow-sm transition-transform duration-200 group-hover:scale-110" />
+                                      )}
+                                    </div>
+                                  )}
                                   <div className="min-w-0 flex-1">
                                     <span className="block truncate text-sm font-medium text-[#0B1220] transition-colors duration-200 group-hover:text-[#1E3A8A]">
                                       {suggestion.name}
                                     </span>
+                                    {suggestion.type === "product" &&
+                                      suggestion.price !== undefined && (
+                                        <span className="block text-xs font-semibold text-[#8B1E3F]">
+                                          ${suggestion.price.toLocaleString()}
+                                        </span>
+                                      )}
                                   </div>
                                   <div className="flex-shrink-0">
                                     <span className="rounded-full px-3 py-1 text-xs font-medium text-[#6B7280] bg-[#F8F7F4] group-hover:bg-[#D6C6B2]/30 group-hover:text-[#0B1220] transition-all duration-200">
@@ -492,44 +680,45 @@ export function Navbar() {
                           </div>
                         )}
 
-                        {recentSearches.length > 0 && (
-                          <div className="border-t border-[#E7E5E4] bg-gradient-to-b from-[#F8F7F4]/30 to-[#F8F7F4]/10">
-                            <div className="p-4">
-                              <div className="mb-3 flex items-center gap-2 px-3 py-2">
-                                <div className="h-4 w-1 rounded-full bg-gradient-to-b from-[#6B7280] to-[#D6C6B2]" />
-                                <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
-                                  Búsquedas recientes
-                                </span>
-                              </div>
-                              <div className="space-y-1">
-                                {recentSearches.map((search, index) => (
-                                  <button
-                                    key={index}
-                                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-4 py-3 transition-all duration-200 hover:border-[#E7E5E4] hover:bg-white/60 hover:shadow-sm"
-                                    onClick={() => {
-                                      setSearchQuery(search);
-                                      setShowSuggestions(false);
-                                      router.push(
-                                        `/productos?search=${encodeURIComponent(search)}`
-                                      );
-                                    }}
-                                  >
-                                    <div className="flex-shrink-0">
-                                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm transition-all duration-200 group-hover:from-[#D6C6B2] group-hover:to-[#F8F7F4]">
-                                        <Search className="h-3.5 w-3.5 text-[#6B7280] transition-colors duration-200 group-hover:text-[#0B1220]" />
+                        {recentSearches.length > 0 &&
+                          suggestions.length === 0 && (
+                            <div className="border-t border-[#E7E5E4] bg-gradient-to-b from-[#F8F7F4]/30 to-[#F8F7F4]/10">
+                              <div className="p-4">
+                                <div className="mb-3 flex items-center gap-2 px-3 py-2">
+                                  <div className="h-4 w-1 rounded-full bg-gradient-to-b from-[#6B7280] to-[#D6C6B2]" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+                                    Búsquedas recientes
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  {recentSearches.map((search, index) => (
+                                    <button
+                                      key={index}
+                                      className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-4 py-3 transition-all duration-200 hover:border-[#E7E5E4] hover:bg-white/60 hover:shadow-sm"
+                                      onClick={() => {
+                                        setSearchQuery(search);
+                                        setShowSuggestions(false);
+                                        router.push(
+                                          `/productos?search=${encodeURIComponent(search)}`
+                                        );
+                                      }}
+                                    >
+                                      <div className="flex-shrink-0">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm transition-all duration-200 group-hover:from-[#D6C6B2] group-hover:to-[#F8F7F4]">
+                                          <Search className="h-3.5 w-3.5 text-[#6B7280] transition-colors duration-200 group-hover:text-[#0B1220]" />
+                                        </div>
                                       </div>
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <span className="block truncate text-sm font-medium text-[#0B1220] transition-colors duration-200 group-hover:text-[#1E3A8A]">
-                                        {search}
-                                      </span>
-                                    </div>
-                                  </button>
-                                ))}
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block truncate text-sm font-medium text-[#0B1220] transition-colors duration-200 group-hover:text-[#1E3A8A]">
+                                          {search}
+                                        </span>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
                         {suggestions.length === 0 &&
                           recentSearches.length === 0 &&
@@ -553,24 +742,30 @@ export function Navbar() {
               </div>
 
               {/* User and Cart Actions */}
-              <div className="flex flex-shrink-0 items-center space-x-3">
+              <div className="flex flex-shrink-0 items-center space-x-2 sm:space-x-3">
                 {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="rounded-xl p-2 hover:bg-[#D6C6B2]/30 transition-all duration-200"
+                        className="rounded-xl p-1.5 sm:p-2 hover:bg-[#D6C6B2]/30 transition-all duration-200"
                       >
-                        <Avatar className="h-9 w-9 border-2 border-[#E7E5E4] shadow-sm">
+                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-[#E7E5E4] shadow-sm">
                           <AvatarImage
                             src={
                               user.user_metadata?.avatar_url ||
                               "/placeholder.svg?height=36&width=36&query=user profile avatar" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
                             alt={user.email || "User"}
                           />
-                          <AvatarFallback className="bg-[#1E3A8A] text-white font-semibold">
+                          <AvatarFallback className="bg-[#1E3A8A] text-white font-semibold text-sm">
                             {user.email ? user.email[0].toUpperCase() : "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -626,14 +821,14 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative h-11 w-11 rounded-xl text-[#0B1220] hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A] transition-all duration-200"
+                  className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl text-[#0B1220] hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A] transition-all duration-200"
                   onClick={() => setIsOpen(!isOpen)}
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {cartItems > 0 && (
                     <Badge
                       variant="destructive"
-                      className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#F8F7F4] p-0 bg-[#8B1E3F] text-white hover:bg-[#711732] text-xs font-semibold shadow-lg"
+                      className="absolute -right-1 -top-1 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 border-[#F8F7F4] p-0 bg-[#8B1E3F] text-white hover:bg-[#711732] text-[10px] sm:text-xs font-semibold shadow-lg"
                     >
                       {cartItems}
                     </Badge>
@@ -646,92 +841,288 @@ export function Navbar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-11 w-11 rounded-xl text-[#0B1220] hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A] lg:hidden transition-all duration-200"
+                      className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl text-[#0B1220] hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A] lg:hidden transition-all duration-200"
                     >
                       <Menu className="h-5 w-5" />
                     </Button>
                   </SheetTrigger>
                   <SheetContent
                     side="right"
-                    className="w-80 border-l-[#E7E5E4] bg-[#F8F7F4]"
+                    className="w-[85vw] max-w-sm border-l-[#E7E5E4] bg-[#F8F7F4] p-0"
                   >
-                    <div className="mt-8 flex flex-col space-y-6">
-                      {/* Mobile Search */}
-                      <div className="md:hidden">
-                        <form onSubmit={handleSearch} className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform h-4 w-4 text-[#6B7280]" />
-                          <Input
-                            placeholder="Buscar productos..."
-                            className="bg-white pl-10 text-[#0B1220] placeholder:text-[#6B7280] border-[#E7E5E4] focus-visible:ring-2 focus-visible:ring-[#1E3A8A] rounded-xl"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </form>
-                      </div>
-
-                      {/* Mobile Categories */}
-                      <div className="space-y-4">
-                        {categories.map((category) => (
-                          <div key={category.name} className="space-y-2">
-                            <Link
-                              href={category.href}
-                              className="block text-lg font-bold text-[#0B1220] hover:text-[#1E3A8A] transition-colors duration-200"
-                            >
-                              {category.name}
-                            </Link>
-                            <div className="space-y-1 pl-4">
-                              {category.subcategories.map((sub) => (
-                                <Link
-                                  key={sub.name}
-                                  href={sub.href}
-                                  className="block py-2 text-sm text-[#6B7280] hover:text-[#0B1220] transition-colors duration-200"
-                                >
-                                  {sub.name}
-                                </Link>
-                              ))}
-                            </div>
+                    <div className="flex h-full flex-col">
+                      {/* Mobile Menu Header */}
+                      <div className="border-b border-[#E7E5E4] bg-white/50 px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-md">
+                            <span className="text-white text-lg font-bold">
+                              S
+                            </span>
                           </div>
-                        ))}
+                          <span className="text-[#0B1220] text-xl font-bold">
+                            StyleHub
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Mobile User Actions */}
-                      <div className="space-y-3 border-t border-[#E7E5E4] pt-6">
-                        {user ? (
-                          <>
-                            {isAdmin && (
+                      {/* Scrollable Content */}
+                      <div className="flex-1 overflow-y-auto px-6 py-6">
+                        <div className="flex flex-col space-y-6">
+                          <div className="md:hidden" ref={mobileSearchRef}>
+                            <form
+                              onSubmit={handleMobileSearch}
+                              className="relative"
+                            >
+                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform h-4 w-4 text-[#6B7280] z-10" />
+                              <Input
+                                placeholder="Buscar productos..."
+                                className="bg-white pl-11 pr-4 py-6 text-[#0B1220] placeholder:text-[#6B7280] border-[#E7E5E4] focus-visible:ring-2 focus-visible:ring-[#1E3A8A] rounded-xl shadow-sm text-base"
+                                value={mobileSearchQuery}
+                                onChange={(e) =>
+                                  setMobileSearchQuery(e.target.value)
+                                }
+                                onFocus={() => {
+                                  if (
+                                    mobileSearchQuery.length >= 2 ||
+                                    recentSearches.length > 0
+                                  ) {
+                                    setShowMobileSuggestions(true);
+                                  }
+                                }}
+                              />
+
+                              {showMobileSuggestions && (
+                                <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[#E7E5E4] bg-white shadow-2xl">
+                                  {mobileSuggestions.length > 0 && (
+                                    <div className="p-3">
+                                      <div className="mb-2 flex items-center gap-2 px-2 py-1">
+                                        <div className="h-4 w-1 rounded-full bg-gradient-to-b from-[#1E3A8A] to-[#8B1E3F]" />
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-[#0B1220]">
+                                          Sugerencias
+                                        </span>
+                                      </div>
+                                      <div className="space-y-1">
+                                        {mobileSuggestions.map(
+                                          (suggestion, index) => (
+                                            <button
+                                              key={index}
+                                              className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-all duration-200 hover:border-[#D6C6B2] hover:bg-[#D6C6B2]/20 active:scale-[0.98]"
+                                              onClick={() =>
+                                                handleMobileSuggestionClick(
+                                                  suggestion
+                                                )
+                                              }
+                                            >
+                                              {suggestion.type === "product" &&
+                                              suggestion.image ? (
+                                                <div className="flex-shrink-0">
+                                                  <div className="relative h-10 w-10 overflow-hidden rounded-lg border border-[#E7E5E4] shadow-sm">
+                                                    <Image
+                                                      src={
+                                                        suggestion.image ||
+                                                        "/placeholder.svg"
+                                                      }
+                                                      alt={suggestion.name}
+                                                      fill
+                                                      className="object-cover"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <div className="flex-shrink-0">
+                                                  {suggestion.type ===
+                                                  "product" ? (
+                                                    <div className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#1E3A8A] to-[#172C6F] shadow-sm" />
+                                                  ) : (
+                                                    <div className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-[#8B1E3F] to-[#711732] shadow-sm" />
+                                                  )}
+                                                </div>
+                                              )}
+                                              <div className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-medium text-[#0B1220]">
+                                                  {suggestion.name}
+                                                </span>
+                                                {suggestion.type ===
+                                                  "product" &&
+                                                  suggestion.price !==
+                                                    undefined && (
+                                                    <span className="block text-xs font-semibold text-[#8B1E3F]">
+                                                      $
+                                                      {suggestion.price.toLocaleString()}
+                                                    </span>
+                                                  )}
+                                              </div>
+                                              <div className="flex-shrink-0">
+                                                <span className="rounded-full px-2 py-0.5 text-xs font-medium text-[#6B7280] bg-[#F8F7F4]">
+                                                  {suggestion.type === "product"
+                                                    ? "Producto"
+                                                    : "Categoría"}
+                                                </span>
+                                              </div>
+                                            </button>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {recentSearches.length > 0 &&
+                                    mobileSuggestions.length === 0 && (
+                                      <div className="border-t border-[#E7E5E4] bg-gradient-to-b from-[#F8F7F4]/30 to-[#F8F7F4]/10">
+                                        <div className="p-3">
+                                          <div className="mb-2 flex items-center gap-2 px-2 py-1">
+                                            <div className="h-4 w-1 rounded-full bg-gradient-to-b from-[#6B7280] to-[#D6C6B2]" />
+                                            <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+                                              Búsquedas recientes
+                                            </span>
+                                          </div>
+                                          <div className="space-y-1">
+                                            {recentSearches.map(
+                                              (search, index) => (
+                                                <button
+                                                  key={index}
+                                                  className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-all duration-200 hover:border-[#E7E5E4] hover:bg-white/60 active:scale-[0.98]"
+                                                  onClick={() => {
+                                                    setMobileSearchQuery(
+                                                      search
+                                                    );
+                                                    setShowMobileSuggestions(
+                                                      false
+                                                    );
+                                                    router.push(
+                                                      `/productos?search=${encodeURIComponent(search)}`
+                                                    );
+                                                  }}
+                                                >
+                                                  <div className="flex-shrink-0">
+                                                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm">
+                                                      <Search className="h-3 w-3 text-[#6B7280]" />
+                                                    </div>
+                                                  </div>
+                                                  <div className="min-w-0 flex-1">
+                                                    <span className="block truncate text-sm font-medium text-[#0B1220]">
+                                                      {search}
+                                                    </span>
+                                                  </div>
+                                                </button>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  {mobileSuggestions.length === 0 &&
+                                    recentSearches.length === 0 &&
+                                    mobileSearchQuery.length >= 2 && (
+                                      <div className="p-6 text-center">
+                                        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#F8F7F4] to-[#D6C6B2] shadow-sm">
+                                          <Search className="h-4 w-4 text-[#6B7280]" />
+                                        </div>
+                                        <p className="mb-1 text-sm font-medium text-[#6B7280]">
+                                          No se encontraron sugerencias
+                                        </p>
+                                        <p className="text-xs text-[#6B7280]">
+                                          Intenta con otros términos
+                                        </p>
+                                      </div>
+                                    )}
+                                </div>
+                              )}
+                            </form>
+                          </div>
+
+                          <div className="space-y-5">
+                            <div className="flex items-center gap-2 px-1">
+                              <div className="h-5 w-1 rounded-full bg-gradient-to-b from-[#1E3A8A] to-[#8B1E3F]" />
+                              <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
+                                Categorías
+                              </span>
+                            </div>
+                            <Accordion
+                              type="single"
+                              collapsible
+                              className="space-y-2"
+                            >
+                              {categories.map((category) => (
+                                <AccordionItem
+                                  key={category.name}
+                                  value={category.name}
+                                  className="border-none"
+                                >
+                                  <AccordionTrigger className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3.5 text-base font-bold text-[#0B1220] hover:bg-white hover:text-[#1E3A8A] hover:no-underline transition-all duration-200 shadow-sm [&[data-state=open]]:bg-white [&[data-state=open]]:text-[#1E3A8A]">
+                                    {category.name}
+                                  </AccordionTrigger>
+                                  <AccordionContent className="pt-2 pb-0">
+                                    <div className="space-y-1 pl-3">
+                                      {category.subcategories.map((sub) => (
+                                        <Link
+                                          key={sub.name}
+                                          href={sub.href}
+                                          className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-[#6B7280] hover:bg-[#D6C6B2]/20 hover:text-[#0B1220] transition-all duration-200 active:scale-[0.98]"
+                                        >
+                                          <div className="h-1.5 w-1.5 rounded-full bg-[#D6C6B2]" />
+                                          {sub.name}
+                                        </Link>
+                                      ))}
+                                      <Link
+                                        href={category.href}
+                                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-[#8B1E3F] hover:bg-[#8B1E3F]/10 hover:text-[#711732] transition-all duration-200 active:scale-[0.98] mt-2"
+                                      >
+                                        <span>Ver toda la colección</span>
+                                        <ChevronDown className="h-3 w-3 -rotate-90" />
+                                      </Link>
+                                    </div>
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile User Actions - Fixed at bottom */}
+                      <div className="border-t border-[#E7E5E4] bg-white/50 px-6 py-5">
+                        <div className="space-y-3">
+                          {user ? (
+                            <>
+                              {isAdmin && (
+                                <Button
+                                  className="w-full bg-[#8B1E3F] hover:bg-[#711732] text-white font-semibold rounded-xl py-6 transition-all duration-200 shadow-md active:scale-[0.98] text-base"
+                                  onClick={() =>
+                                    router.push("/admin/dashboard")
+                                  }
+                                >
+                                  <Settings className="mr-2 h-5 w-5" />
+                                  Panel Admin
+                                </Button>
+                              )}
                               <Button
-                                className="w-full bg-[#8B1E3F] hover:bg-[#711732] text-white font-semibold rounded-xl py-3 transition-all duration-200"
-                                onClick={() => router.push("/admin/dashboard")}
+                                className="w-full bg-[#1E3A8A] hover:bg-[#172C6F] text-white font-semibold rounded-xl py-6 transition-all duration-200 shadow-md active:scale-[0.98] text-base"
+                                onClick={() => router.push("/profile")}
                               >
-                                <Settings className="mr-2 h-4 w-4" />
-                                Panel Admin
+                                <User className="mr-2 h-5 w-5" />
+                                Mi Perfil
                               </Button>
-                            )}
+                              <Button
+                                variant="outline"
+                                className="w-full border-2 border-[#8B1E3F] text-[#8B1E3F] hover:bg-[#8B1E3F] hover:text-white font-semibold rounded-xl py-6 transition-all duration-200 bg-transparent active:scale-[0.98] text-base"
+                                onClick={handleLogout}
+                              >
+                                <LogOut className="mr-2 h-5 w-5" />
+                                Cerrar Sesión
+                              </Button>
+                            </>
+                          ) : (
                             <Button
-                              className="w-full bg-[#1E3A8A] hover:bg-[#172C6F] text-white font-semibold rounded-xl py-3 transition-all duration-200"
-                              onClick={() => router.push("/profile")}
+                              className="w-full bg-[#1E3A8A] hover:bg-[#172C6F] text-white font-semibold rounded-xl py-6 transition-all duration-200 shadow-md active:scale-[0.98] text-base"
+                              onClick={() => router.push("/register")}
                             >
-                              <User className="mr-2 h-4 w-4" />
-                              Mi Perfil
+                              <User className="mr-2 h-5 w-5" />
+                              Registrarse
                             </Button>
-                            <Button
-                              variant="outline"
-                              className="w-full border-[#8B1E3F] text-[#8B1E3F] hover:bg-[#8B1E3F] hover:text-white font-semibold rounded-xl py-3 transition-all duration-200 bg-transparent"
-                              onClick={handleLogout}
-                            >
-                              <LogOut className="mr-2 h-4 w-4" />
-                              Cerrar Sesión
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            className="w-full bg-[#1E3A8A] hover:bg-[#172C6F] text-white font-semibold rounded-xl py-3 transition-all duration-200"
-                            onClick={() => router.push("/register")}
-                          >
-                            <User className="mr-2 h-4 w-4" />
-                            Registrarse
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   </SheetContent>

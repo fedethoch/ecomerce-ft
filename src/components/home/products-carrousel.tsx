@@ -80,7 +80,7 @@ export default function ProductCarrousel({
         <Header title={title} countHint={`${featured.length}`} />
 
         <Carousel
-          opts={{ align: "start", loop: true }}
+          opts={{ align: "center", loop: true }}
           className="w-full relative mt-2"
         >
           {/* Gutter interno mínimo + patrón -ml/pl para alinear cards con el Title */}

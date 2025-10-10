@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface ProductFiltersProps {
   onFilterChange: (filters: any) => void;
@@ -14,6 +16,7 @@ interface ProductFiltersProps {
     category?: string;
     priceRange?: number[];
     sizes?: string[];
+    search?: string;
   };
 }
 
@@ -25,29 +28,10 @@ export function ProductFilters({
     category: "all",
     priceRange: [0, 100000],
     sizes: [] as string[],
+    search: "",
   });
 
-  // Apply initial filters from props when provided and when they change
-  useEffect(() => {
-    if (initialFilters) {
-      setFilters((prev) => ({
-        ...prev,
-        ...(initialFilters.category
-          ? { category: initialFilters.category }
-          : {}),
-        ...(initialFilters.priceRange
-          ? { priceRange: initialFilters.priceRange }
-          : {}),
-        ...(initialFilters.sizes ? { sizes: initialFilters.sizes } : {}),
-      }));
-      onFilterChange({
-        category: initialFilters.category ?? "all",
-        priceRange: initialFilters.priceRange ?? [0, 100000],
-        sizes: initialFilters.sizes ?? [],
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialFilters]);
+  const [searchInput, setSearchInput] = useState("");
 
   const categories = [
     { id: "all", label: "Todas las categorías" },
@@ -82,15 +66,54 @@ export function ProductFilters({
     onFilterChange(newFilters);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    // Don't update filters immediately - let the debounced effect handle it
+  };
+
+  // Handle local search input changes with debounce
+  useEffect(() => {
+    // Skip the effect if the change came from initialFilters
+    if (searchInput === (initialFilters?.search ?? "")) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      const newFilters = { ...filters, search: searchInput };
+      setFilters(newFilters);
+      onFilterChange(newFilters);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput, filters, onFilterChange, initialFilters?.search]);
+
   const clearFilters = () => {
     const newFilters = {
       category: "all",
       priceRange: [0, 100000],
       sizes: [],
+      search: "",
     };
     setFilters(newFilters);
+    setSearchInput("");
     onFilterChange(newFilters);
   };
+
+  // Handle initial filters from URL
+  useEffect(() => {
+    if (initialFilters) {
+      const newFilters = {
+        category: initialFilters.category ?? "all",
+        priceRange: initialFilters.priceRange ?? [0, 100000],
+        sizes: initialFilters.sizes ?? [],
+        search: initialFilters.search ?? "",
+      };
+
+      setFilters(newFilters);
+      setSearchInput(initialFilters.search ?? "");
+      onFilterChange(newFilters);
+    }
+  }, [initialFilters]);
 
   return (
     <Card className="sticky top-4">
@@ -101,6 +124,22 @@ export function ProductFilters({
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Search */}
+        <div>
+          <h3 className="font-medium mb-3">Buscar</h3>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar productos..."
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <Separator />
+
         {/* Categories */}
         <div>
           <h3 className="font-medium mb-3">Categoría</h3>

@@ -39,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   console.log("URL usada para", product.name, ":", mainImage);
 
   return (
-    <div className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+    <div className="group relative h-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       <Link href={`/productos/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden">
           {/* Imagen principal del producto */}
@@ -84,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
 
-      <div className="p-4">
+      <div className="p-4 h-full ">
         <Link href={`/productos/${product.id}`}>
           <h3 className="font-medium text-sm mb-1 hover:text-primary transition-colors line-clamp-2">
             {product.name}
