@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import path from "path";
 
 const categories = [
   {
@@ -487,7 +488,9 @@ export function Navbar() {
   if (
     pathname.includes("/admin") ||
     pathname.includes("/login") ||
-    pathname.includes("/register")
+    pathname.includes("/register") ||
+    pathname.includes("/auth/callback") ||
+    pathname.includes("/verify")
   ) {
     return null;
   }
