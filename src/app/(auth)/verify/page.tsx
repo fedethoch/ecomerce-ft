@@ -97,7 +97,8 @@ const VerifyContent = () => {
       if (user?.email_confirmed_at) {
         setIsVerified(true);
         toast.success("¡Email verificado correctamente!");
-        setTimeout(() => router.push("/login"), 2000);
+        // Redirigir directamente a la página principal
+        setTimeout(() => router.push("/"), 2000);
       } else {
         toast.info(
           "Tu email aún no ha sido verificado. Por favor, revisa tu correo y haz clic en el enlace de verificación."
@@ -114,7 +115,7 @@ const VerifyContent = () => {
   // Redirigir después de verificación exitosa
   useEffect(() => {
     if (isVerified) {
-      setTimeout(() => router.push("/login"), 3000);
+      setTimeout(() => router.push("/"), 3000);
     }
   }, [isVerified, router]);
 
@@ -171,7 +172,7 @@ const VerifyContent = () => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <Button asChild className="w-full bg-primary hover:bg-primary/90">
-                <Link href="/login">Iniciar sesión</Link>
+                <Link href="/">Ir a la página principal</Link>
               </Button>
 
               <div className="text-center">
