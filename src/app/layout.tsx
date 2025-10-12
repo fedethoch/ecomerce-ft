@@ -1,43 +1,37 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { Navbar } from "@/components/layout/navbar"
-import { Footer } from "@/components/layout/footer"
-import  {CartProvider}  from "../context/cart-provider"
-import Cart from "@/components/cart/Cart"
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { CartProvider } from "../context/cart-provider";
+import Cart from "@/components/cart/Cart";
+import { Toaster } from "sonner";
 
-
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "StyleHub - Moda Moderna",
   description: "Tu tienda de ropa favorita online",
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    
     <html lang="es">
       <body className={inter.className}>
-        
         <div className="min-h-screen flex flex-col">
-          
+          <Toaster />
           <CartProvider>
             <Navbar />
-            <Cart  />
+            <Cart />
             <main className="flex-1">{children}</main>
-            
-            </CartProvider>
-          </div>
-        
+          </CartProvider>
+        </div>
       </body>
     </html>
-    
-    
-  )
+  );
 }
