@@ -1,73 +1,105 @@
-"use client"
+"use client";
 
-import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
-import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { useRouter } from "next/navigation"
-import { useSearchParams } from "next/navigation"
-import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 const VerifyContent = () => {
-  const supabase =  createClient()
-  const router = useRouter()
-  const [isVerified, setIsVerified] = useState(false)
-  const [isManualVerifying, setIsManualVerifying] = useState(false)
-  const [isResending, setIsResending] = useState(false)
-  const [email, setEmail] = useState<string | null>(null)
-  const searchParams = useSearchParams()
+  const supabase = createClient();
+  const router = useRouter();
+  const [isVerified, setIsVerified] = useState(false);
+  const [isManualVerifying, setIsManualVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
-  // Obtener email de los parámetros de búsqueda
+  // Obtener email y enviar verificación automáticamente
   useEffect(() => {
-    const emailParam = searchParams.get("email")
-    if (emailParam) setEmail(emailParam)
-  }, [searchParams])
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+      // Enviar correo de verificación automáticamente
+      const sendVerificationEmail = async () => {
+        try {
+          const { error } = await supabase.auth.signInWithOtp({
+            email: emailParam,
+            options: {
+              emailRedirectTo: `https://ecomerce-ft.vercel.app/auth/callback`,
+            },
+          });
+
+          if (error) {
+            console.error("Error al enviar correo de verificación:", error);
+            toast.error("Error al enviar el correo de verificación");
+          } else {
+            toast.success(
+              "Correo de verificación enviado. Por favor revisa tu bandeja de entrada."
+            );
+          }
+        } catch (error) {
+          console.error("Error al enviar correo de verificación:", error);
+          toast.error("Error al enviar el correo de verificación");
+        }
+      };
+
+      sendVerificationEmail();
+    }
+  }, [searchParams]);
 
   // Función para verificación manual
   const handleManualVerify = async () => {
     if (!email) {
-      toast.error("No se pudo obtener el email")
-      return
+      toast.error("No se pudo obtener el email");
+      return;
     }
 
-    setIsManualVerifying(true)
+    setIsManualVerifying(true);
     try {
       // Verificar el estado de autenticación
-      const { data: { user }, error } = await supabase.auth.getUser()
-      
-      if (error) throw error
-      
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error) throw error;
+
       if (user?.email_confirmed_at) {
-        setIsVerified(true)
-        toast.success("¡Email verificado correctamente!")
+        setIsVerified(true);
+        toast.success("¡Email verificado correctamente!");
       } else {
-        toast.info("Tu email aún no ha sido verificado. Por favor, haz clic en el enlace que te enviamos.")
+        toast.info(
+          "Tu email aún no ha sido verificado. Por favor, haz clic en el enlace que te enviamos."
+        );
       }
     } catch (error) {
-      toast.error("Error al verificar el estado de tu cuenta")
-      console.error("Error en verificación manual:", error)
+      toast.error("Error al verificar el estado de tu cuenta");
+      console.error("Error en verificación manual:", error);
     } finally {
-      setIsManualVerifying(false)
+      setIsManualVerifying(false);
     }
-  }
+  };
 
   // Redirigir después de verificación exitosa
   useEffect(() => {
     if (isVerified) {
-      setTimeout(() => router.push("/login"), 3000)
+      setTimeout(() => router.push("/login"), 3000);
     }
-  }, [isVerified, router])
+  }, [isVerified, router]);
 
   // Función corregida para reenviar el correo de verificación
   const handleResendVerification = async () => {
     if (!email) {
-      toast.error("No se pudo obtener el email")
-      return
+      toast.error("No se pudo obtener el email");
+      return;
     }
 
-    setIsResending(true)
+    setIsResending(true);
     try {
       // IMPORTANTE: Usar signInWithOtp para reenviar el correo de verificación
       const { error } = await supabase.auth.signInWithOtp({
@@ -75,18 +107,22 @@ const VerifyContent = () => {
         options: {
           emailRedirectTo: `https://ecomerce-ft.vercel.app/auth/callback`,
         },
-      })
+      });
 
-      if (error) throw error
-      
-      toast.success("¡Correo de verificación reenviado! Por favor revisa tu bandeja de entrada.")
+      if (error) throw error;
+
+      toast.success(
+        "¡Correo de verificación reenviado! Por favor revisa tu bandeja de entrada."
+      );
     } catch (error: any) {
-      toast.error(error.message || "Error al reenviar el correo. Inténtalo de nuevo.")
-      console.error("Error en reenvío:", error)
+      toast.error(
+        error.message || "Error al reenviar el correo. Inténtalo de nuevo."
+      );
+      console.error("Error en reenvío:", error);
     } finally {
-      setIsResending(false)
+      setIsResending(false);
     }
-  }
+  };
 
   if (isVerified) {
     return (
@@ -121,7 +157,7 @@ const VerifyContent = () => {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -142,8 +178,8 @@ const VerifyContent = () => {
               Verifica tu cuenta
             </h1>
             <p className="text-sm text-muted-foreground">
-              Hemos enviado un enlace de verificación a <strong>{email}</strong>. 
-              Por favor, haz clic en ese enlace para verificar tu cuenta.
+              Hemos enviado un enlace de verificación a <strong>{email}</strong>
+              . Por favor, haz clic en ese enlace para verificar tu cuenta.
             </p>
           </div>
         </CardHeader>
@@ -164,7 +200,7 @@ const VerifyContent = () => {
                 "Ya hice clic en el enlace, verificar ahora"
               )}
             </Button>
-            
+
             <div className="text-center">
               <p className="text-sm">
                 ¿No has recibido el correo? Revisa tu carpeta de spam o
@@ -195,13 +231,13 @@ const VerifyContent = () => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
 export default function VerifyPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <VerifyContent />
     </Suspense>
-  )
+  );
 }
