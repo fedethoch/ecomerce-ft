@@ -61,24 +61,50 @@ const VerifyContent = () => {
 
     setIsManualVerifying(true);
     try {
-      // Verificar el estado de autenticación
+      // Primero intentamos obtener la sesión actual
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw sessionError;
+
+      if (!session) {
+        // Si no hay sesión, intentamos iniciar sesión con OTP
+        const { error: signInError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `https://ecomerce-ft.vercel.app/auth/callback`,
+          },
+        });
+
+        if (signInError) throw signInError;
+
+        toast.info(
+          "Por favor, revisa tu correo y haz clic en el enlace de verificación."
+        );
+        return;
+      }
+
+      // Si hay sesión, verificamos si el email está confirmado
       const {
         data: { user },
-        error,
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (error) throw error;
+      if (userError) throw userError;
 
       if (user?.email_confirmed_at) {
         setIsVerified(true);
         toast.success("¡Email verificado correctamente!");
+        setTimeout(() => router.push("/login"), 2000);
       } else {
         toast.info(
-          "Tu email aún no ha sido verificado. Por favor, haz clic en el enlace que te enviamos."
+          "Tu email aún no ha sido verificado. Por favor, revisa tu correo y haz clic en el enlace de verificación."
         );
       }
-    } catch (error) {
-      toast.error("Error al verificar el estado de tu cuenta");
+    } catch (error: any) {
+      toast.error(error.message || "Error al verificar el estado de tu cuenta");
       console.error("Error en verificación manual:", error);
     } finally {
       setIsManualVerifying(false);
