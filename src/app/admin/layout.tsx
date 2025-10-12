@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppSidebar } from "@/components/admin/app-sidebar";
 import { AdminLayoutProvider } from "@/context/layout-context";
 import { AdminLayoutContent } from "@/components/admin/admin-layout-context";
+import { Toaster } from "sonner";
 
 export default async function AdminLayout({
   children,
@@ -29,6 +30,8 @@ export default async function AdminLayout({
 
   return (
     <AdminLayoutProvider>
+      <Toaster />
+
       <div className="relative min-h-screen bg-background">
         <AppSidebar />
         <AdminLayoutContent>{children}</AdminLayoutContent>
