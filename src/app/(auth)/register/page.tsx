@@ -1,131 +1,137 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ArrowLeft, Loader2, Eye, EyeOff, Check, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { createClient } from "@/lib/supabase/client"
-import { useState } from "react"
-import { useRouter } from "next/dist/client/components/navigation"
-import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler"
-import { AppActionException } from "@/types/exceptions"
-import { toast } from "sonner"
-import { createUser } from "@/controllers/auth-controller"
+import Link from "next/link";
+import { ArrowLeft, Loader2, Eye, EyeOff, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
+import { useRouter } from "next/dist/client/components/navigation";
+import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler";
+import { AppActionException } from "@/types/exceptions";
+import { toast } from "sonner";
+import { createUser } from "@/controllers/auth-controller";
 
 export default function RegisterPage() {
-  const supabase = createClient()
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const [isTermsAccepted, setIsTermsAccepted] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [passwordValue, setPasswordValue] = useState("")
+  const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordValue, setPasswordValue] = useState("");
 
-  const hasUppercase = /[A-Z]/.test(passwordValue)
-  const hasNumber = /[0-9]/.test(passwordValue)
-  const hasMinLength = passwordValue.length >= 8
-  const hasSpecialChar = /[^A-Za-z0-9]/.test(passwordValue)
+  const hasUppercase = /[A-Z]/.test(passwordValue);
+  const hasNumber = /[0-9]/.test(passwordValue);
+  const hasMinLength = passwordValue.length >= 8;
+  const hasSpecialChar = /[^A-Za-z0-9]/.test(passwordValue);
 
   const handleSubmitWithGoogle = async () => {
     try {
-      const baseUrl = typeof window !== "undefined"
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_SITE_URL ?? "");
+      const baseUrl =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_SITE_URL ?? "");
       await actionErrorHandler(async () => {
         await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `${baseUrl}/auth/callback`
+            redirectTo: `${baseUrl}/auth/callback`,
           },
-        })
-      })
+        });
+      });
 
-      return
+      return;
     } catch (error) {
       if (error instanceof AppActionException) {
-        toast.error(error.userMessage || error.message)
+        toast.error(error.userMessage || error.message);
       } else {
-        toast.error("Ocurrió un error al iniciar sesión con Google")
+        toast.error("Ocurrió un error al iniciar sesión con Google");
       }
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      const email = formData.get("email") as string
-      const password = formData.get("password") as string
-      const name = formData.get("fullName") as string
-      const phone = formData.get("phone") as string
-      const confirmPassword = formData.get("confirmPassword") as string
+      const formData = new FormData(e.target as HTMLFormElement);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+      const name = formData.get("fullName") as string;
+      const phone = formData.get("phone") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
 
       if (!isTermsAccepted) {
-        toast.error("Debes aceptar los términos y condiciones")
-        setIsLoading(false)
-        return
+        toast.error("Debes aceptar los términos y condiciones");
+        setIsLoading(false);
+        return;
       }
 
       if (password !== confirmPassword) {
-        toast.error("Las contraseñas no coinciden")
-        setIsLoading(false)
-        return
+        toast.error("Las contraseñas no coinciden");
+        setIsLoading(false);
+        return;
       }
 
       const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name,
-              phone: phone
-            },
-            emailRedirectTo: `http://localhost:3000/auth/callback`
-          }
-        });
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            phone: phone,
+          },
+          emailRedirectTo: `https://ecomerce-ft.vercel.app/auth/callback`,
+        },
+      });
 
-        if (error) throw new AppActionException(
+      if (error)
+        throw new AppActionException(
           error.status || 400, // Usamos el status de Supabase o 400 por defecto
-          error.message,       // Mensaje técnico
+          error.message, // Mensaje técnico
           "Error de registro", // Mensaje amigable para el usuario
           {
             // Opcional: mapear errores de Supabase a campos del formulario
-            email: [error.message.includes("email") ? "Correo inválido" : ""].filter(Boolean),
-            password: [error.message.includes("password") ? "Contraseña débil" : ""].filter(Boolean)
+            email: [
+              error.message.includes("email") ? "Correo inválido" : "",
+            ].filter(Boolean),
+            password: [
+              error.message.includes("password") ? "Contraseña débil" : "",
+            ].filter(Boolean),
           }
         );
 
-        // Solo redirigir si no hay error
-        router.push(`/verify?email=${email}`);
-      } catch (error) {
+      // Solo redirigir si no hay error
+      router.push(`/verify?email=${email}`);
+    } catch (error) {
       if (error instanceof AppActionException) {
         if (error.fieldErrors) {
-          const fieldErrors = error.fieldErrors
+          const fieldErrors = error.fieldErrors;
 
           Object.entries(fieldErrors).forEach(([field, errors]) => {
-            const fieldName = getFieldDisplayName(field)
+            const fieldName = getFieldDisplayName(field);
             errors.forEach((errorMessage) => {
-              toast.error(`${fieldName}: ${errorMessage}`)
-            })
-          })
+              toast.error(`${fieldName}: ${errorMessage}`);
+            });
+          });
 
-          return
+          return;
         }
 
-        return toast.warning(error.userMessage || error.message)
+        return toast.warning(error.userMessage || error.message);
       }
 
-      toast.error("Ocurrió un error al crear el usuario")
+      toast.error("Ocurrió un error al crear el usuario");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const getFieldDisplayName = (field: string): string => {
     const fieldNames: Record<string, string> = {
@@ -133,9 +139,9 @@ export default function RegisterPage() {
       password: "Contraseña",
       name: "Nombre",
       phone: "Teléfono",
-    }
-    return fieldNames[field] || field
-  }
+    };
+    return fieldNames[field] || field;
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
@@ -407,5 +413,5 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
