@@ -83,7 +83,7 @@ function pathForView(view: string): string {
     case "analytics":
       return "/admin/analytics";
     case "settings":
-      return "/admin/settings";
+      return "/profile";
     case "back":
       return "/";
     default:
