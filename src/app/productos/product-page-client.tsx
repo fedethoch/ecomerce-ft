@@ -28,136 +28,128 @@ export default function ProductPageClient() {
     startIndex + productsPerPage
   );
 
-  const searchParams = useSearchParams();
+  const DEFAULT_FILTERS = {
+    category: "all",
+    priceRange: [0, 100000],
+    sizes: [] as string[],
+    search: "",
+    isNew: false,
+    isSale: false,
+  };
 
   useEffect(() => {
-    // Read URL search params to prepopulate filters (reactive)
-    const params = searchParams
-      ? searchParams
-      : new URLSearchParams(window.location.search);
-    const category = params.get("category") || undefined;
-    const typeParam = params.get("type") || undefined;
-    const priceMin = params.get("priceMin");
-    const priceMax = params.get("priceMax");
-    const sizes = params.get("sizes");
-    const search = params.get("search") || undefined;
-    const parsedPriceRange =
-      priceMin || priceMax
-        ? [Number(priceMin) || 0, Number(priceMax) || 100000]
-        : undefined;
-    const parsedSizes = sizes ? sizes.split(",") : undefined;
+  // Lee la URL inicial y fetchea una sola vez
+  const params = new URLSearchParams(window.location.search);
+  const category = params.get("category") || undefined;
+  const typeParam = params.get("type") || undefined;
+  const priceMin = params.get("priceMin");
+  const priceMax = params.get("priceMax");
+  const sizes = params.get("sizes");
+  const search = params.get("search") || undefined;
+  const parsedPriceRange = priceMin || priceMax ? [Number(priceMin) || 0, Number(priceMax) || 100000] : undefined;
+  const parsedSizes = sizes ? sizes.split(",") : undefined;
+  const isNew = params.get("isNew");
+  const isSale = params.get("isSale");
 
-    const typeToFilterCategory: Record<string, string> = {
-      remeras: "camisetas",
-      camisetas: "camisetas",
-      pantalon: "pantalones",
-      pantalones: "pantalones",
-      buzos: "chaquetas",
-      camperas: "chaquetas",
-      chaquetas: "chaquetas",
-      calzado: "calzado",
-      gorras: "accesorios",
-      accesorios: "accesorios",
-      relojes: "accesorios",
-      carteras: "accesorios",
-    };
+  const typeToFilterCategory: Record<string, string> = {
+    remeras: "camisetas",
+    camisetas: "camisetas",
+    pantalon: "pantalones",
+    pantalones: "pantalones",
+    buzos: "chaquetas",
+    camperas: "chaquetas",
+    chaquetas: "chaquetas",
+    calzado: "calzado",
+    gorras: "accesorios",
+    accesorios: "accesorios",
+    relojes: "accesorios",
+    carteras: "accesorios",
+  };
 
-    const mappedCategoryFromType = typeParam
-      ? (typeToFilterCategory[typeParam.toLowerCase().trim()] ??
-        typeParam.toLowerCase().trim())
-      : undefined;
+  const mappedCategoryFromType = typeParam
+    ? (typeToFilterCategory[typeParam.toLowerCase().trim()] ?? typeParam.toLowerCase().trim())
+    : undefined;
 
-    const parsedInitialFilters = {
-      ...(mappedCategoryFromType ? { category: mappedCategoryFromType } : {}),
-      ...(category && !mappedCategoryFromType
-        ? { category: String(category).toLowerCase().trim() }
-        : {}),
-      ...(parsedPriceRange ? { priceRange: parsedPriceRange } : {}),
-      ...(parsedSizes ? { sizes: parsedSizes } : {}),
-      ...(search ? { search } : {}),
-    };
-    setInitialFilters(parsedInitialFilters);
+  const parsedInitialFilters = {
+    ...(mappedCategoryFromType ? { category: mappedCategoryFromType } : {}),
+    ...(category && !mappedCategoryFromType ? { category: String(category).toLowerCase().trim() } : {}),
+    ...(parsedPriceRange ? { priceRange: parsedPriceRange } : {}),
+    ...(parsedSizes ? { sizes: parsedSizes } : {}),
+    ...(search ? { search } : {}),
+    ...(isNew ? { isNew: isNew === "1" || isNew === "true" } : {}),
+    ...(isSale ? { isSale: isSale === "1" || isSale === "true" } : {}),
+  };
+  setInitialFilters(parsedInitialFilters);
 
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await actionErrorHandler(getProducts);
+      if (!Array.isArray(data)) throw new Error("La respuesta no es un array de productos");
+      setProducts(data);
 
-      try {
-        const data = await actionErrorHandler(getProducts);
-
-        if (Array.isArray(data)) {
-          setProducts(data);
-          if (
-            parsedInitialFilters &&
-            Object.keys(parsedInitialFilters).length > 0
-          ) {
-            let filtered = [...data];
-            if (parsedInitialFilters.search) {
-              const searchLower = parsedInitialFilters.search.toLowerCase();
-              filtered = filtered.filter(
-                (product) =>
-                  product.name.toLowerCase().includes(searchLower) ||
-                  (product.description &&
-                    product.description.toLowerCase().includes(searchLower))
-              );
-            }
-            if (
-              parsedInitialFilters.category &&
-              parsedInitialFilters.category !== "all"
-            ) {
-              filtered = filtered.filter((product) =>
-                categoryMatches(parsedInitialFilters.category, product.category)
-              );
-            }
-            if (
-              parsedInitialFilters.priceRange &&
-              parsedInitialFilters.priceRange.length === 2
-            ) {
-              const [min, max] = parsedInitialFilters.priceRange;
-              filtered = filtered.filter(
-                (product) => product.price >= min && product.price <= max
-              );
-            }
-            if (
-              parsedInitialFilters.sizes &&
-              parsedInitialFilters.sizes.length > 0
-            ) {
-              const sizesArr = parsedInitialFilters.sizes;
-              filtered = filtered.filter((product) =>
-                product.sizes.some((size) => sizesArr.includes(size))
-              );
-            }
-            setFilteredProducts(filtered);
-          } else {
-            setFilteredProducts(data);
-          }
-        } else {
-          throw new Error("La respuesta no es un array de productos");
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-
-        if (error instanceof AppActionException) {
-          setError(
-            error.userMessage || "Ocurrió un error al cargar los productos"
+      // aplicar filtros iniciales una vez
+      if (Object.keys(parsedInitialFilters).length > 0) {
+        let filtered = [...data];
+        if (parsedInitialFilters.search) {
+          const searchLower = parsedInitialFilters.search.toLowerCase();
+          filtered = filtered.filter(
+            (p) =>
+              p.name.toLowerCase().includes(searchLower) ||
+              (p.description && p.description.toLowerCase().includes(searchLower))
           );
-        } else if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError("Ocurrió un error desconocido al cargar los productos");
         }
-      } finally {
-        setIsLoading(false);
+        if (parsedInitialFilters.category && parsedInitialFilters.category !== "all") {
+          filtered = filtered.filter((p) => categoryMatches(parsedInitialFilters.category, p.category));
+        }
+        if (parsedInitialFilters.priceRange?.length === 2) {
+          const [min, max] = parsedInitialFilters.priceRange;
+          filtered = filtered.filter((p) => p.price >= min && p.price <= max);
+        }
+        if (parsedInitialFilters.sizes?.length) {
+          const selected = new Set(parsedInitialFilters.sizes.map((s: string) => normalizeSize(s)));
+          filtered = filtered.filter((p) => getProductSizes(p).some((s) => selected.has(s)));
+        }
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts(data);
       }
-    };
-    fetchProducts();
-  }, [searchParams?.toString()]);
+    } catch (e) {
+      // ... (tu mismo manejo de error)
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, []); // <<--- vacío: corre solo al montar
 
   const normalize = (s: unknown) =>
     String(s ?? "")
       .toLowerCase()
       .trim();
 
+  const normalizeSize = (s: unknown) => String(s ?? "").trim().toUpperCase();
+
+  const getProductSizes = (p: any): string[] => {
+    const v = p?.sizes;
+    if (Array.isArray(v)) return v.map(normalizeSize);
+    if (typeof v === "string") {
+      const t = v.trim();
+      // si viene como JSON string: '["S","M"]'
+      if (t.startsWith("[") && t.endsWith("]")) {
+        try {
+          const arr = JSON.parse(t);
+          if (Array.isArray(arr)) return arr.map(normalizeSize);
+        } catch {}
+      }
+      // si viene CSV: "S,M,L" o con espacios
+      return t.split(/[,\s]+/).filter(Boolean).map(normalizeSize);
+    }
+    return [];
+  };
+  
   const categoryMatches = (
     selected: string | undefined | null,
     prodCat: unknown
@@ -224,10 +216,12 @@ export default function ProductPageClient() {
     }
 
     if (filters.sizes && filters.sizes.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.sizes.some((size) => filters.sizes.includes(size))
-      );
+      const selected = new Set(filters.sizes.map((s: string) => normalizeSize(s)));
+      filtered = filtered.filter((p) => getProductSizes(p).some((s) => selected.has(s)));
     }
+
+    if (filters.isNew)  filtered = filtered.filter((p) => !!p.isNew);
+    if (filters.isSale) filtered = filtered.filter((p) => !!p.isSale);
 
     setFilteredProducts(filtered);
     setCurrentPage(1);
@@ -243,6 +237,8 @@ export default function ProductPageClient() {
       }
       if (filters.sizes && filters.sizes.length > 0)
         params.set("sizes", filters.sizes.join(","));
+      if (filters.isNew)  params.set("isNew", "1");
+      if (filters.isSale) params.set("isSale", "1");
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({}, "", newUrl);
     } catch (e) {
@@ -372,7 +368,7 @@ export default function ProductPageClient() {
               </p>
               <button
                 onClick={() => {
-                  setFilteredProducts(products);
+                  setInitialFilters({ ...DEFAULT_FILTERS });
                   setCurrentPage(1);
                 }}
                 className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition-colors"

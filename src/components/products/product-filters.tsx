@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import is from "zod/v4/locales/is.cjs";
 
 interface ProductFiltersProps {
   onFilterChange: (filters: any) => void;
@@ -17,6 +18,8 @@ interface ProductFiltersProps {
     priceRange?: number[];
     sizes?: string[];
     search?: string;
+    isNew?: boolean;
+    isSale?: boolean;
   };
 }
 
@@ -29,6 +32,8 @@ export function ProductFilters({
     priceRange: [0, 100000],
     sizes: [] as string[],
     search: "",
+    isNew: false,
+    isSale: false,
   });
 
   const [searchInput, setSearchInput] = useState("");
@@ -71,6 +76,18 @@ export function ProductFilters({
     // Don't update filters immediately - let the debounced effect handle it
   };
 
+  const handleIsNewChange = (checked: boolean) => {
+    const newFilters = { ...filters, isNew: Boolean(checked) };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  const handleIsSaleChange = (checked: boolean) => {
+    const newFilters = { ...filters, isSale: Boolean(checked) };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
   // Handle local search input changes with debounce
   useEffect(() => {
     // Skip the effect if the change came from initialFilters
@@ -93,6 +110,8 @@ export function ProductFilters({
       priceRange: [0, 100000],
       sizes: [],
       search: "",
+      isNew: false,
+      isSale: false,
     };
     setFilters(newFilters);
     setSearchInput("");
@@ -107,6 +126,8 @@ export function ProductFilters({
         priceRange: initialFilters.priceRange ?? [0, 100000],
         sizes: initialFilters.sizes ?? [],
         search: initialFilters.search ?? "",
+        isNew: Boolean(initialFilters.isNew),
+        isSale: Boolean(initialFilters.isSale),
       };
 
       setFilters(newFilters);
@@ -119,7 +140,7 @@ export function ProductFilters({
     <Card className="sticky top-4">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Filtros</CardTitle>
-        <Button variant="ghost" size="sm" onClick={clearFilters}>
+        <Button variant="ghost" size="sm" onClick={clearFilters} type="button">
           Limpiar
         </Button>
       </CardHeader>
@@ -140,6 +161,35 @@ export function ProductFilters({
 
         <Separator />
 
+                {/* NUEVO: Estado */}
+        <div>
+          <h3 className="font-medium mb-3">Estado</h3>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isNew"
+                checked={filters.isNew}
+                onCheckedChange={(checked) => handleIsNewChange(checked as boolean)}
+                type="button"
+              />
+              <Label htmlFor="isNew" className="text-sm">
+                Novedades
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isSale"
+                checked={filters.isSale}
+                onCheckedChange={(checked) => handleIsSaleChange(checked as boolean)}
+                type="button"
+              />
+              <Label htmlFor="isSale" className="text-sm">
+                En oferta
+              </Label>
+            </div>
+          </div>
+        </div>
+
         {/* Categories */}
         <div>
           <h3 className="font-medium mb-3">Categoría</h3>
@@ -150,6 +200,7 @@ export function ProductFilters({
                   id={category.id}
                   checked={filters.category === category.id}
                   onCheckedChange={() => handleCategoryChange(category.id)}
+                  type="button"
                 />
                 <Label htmlFor={category.id} className="text-sm">
                   {category.label}
@@ -194,6 +245,7 @@ export function ProductFilters({
                   onCheckedChange={(checked) =>
                     handleSizeChange(size, checked as boolean)
                   }
+                  type="button"
                 />
                 <Label htmlFor={size} className="text-sm">
                   {size}

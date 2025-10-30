@@ -49,62 +49,48 @@ const categories = [
         name: "Últimas llegadas",
         href: "/productos?category=nuevo&sort=latest",
       },
-      { name: "Tendencias", href: "/productos?category=nuevo&featured=true" },
+      { name: "Tendencias", href: "/productos?category=nuevo" },
     ],
   },
   {
-    name: "Hombre",
-    href: "/productos?category=hombre",
+    name: "Adulto",
+    href: "/productos?category=adulto",
     subcategories: [
-      { name: "Remeras", href: "/productos?category=hombre&type=remeras" },
+      { name: "Remeras", href: "/productos?category=remeras" },
       {
         name: "Pantalones",
-        href: "/productos?category=hombre&type=pantalones",
+        href: "/productos?category=pantalones",
       },
-      { name: "Buzos", href: "/productos?category=hombre&type=buzos" },
-      { name: "Camperas", href: "/productos?category=hombre&type=camperas" },
-      { name: "Calzado", href: "/productos?category=hombre&type=calzado" },
-    ],
-  },
-  {
-    name: "Mujer",
-    href: "/productos?category=mujer",
-    subcategories: [
-      { name: "Remeras", href: "/productos?category=mujer&type=remeras" },
-      {
-        name: "Pantalones",
-        href: "/productos?category=mujer&type=pantalones",
-      },
-      { name: "Buzos", href: "/productos?category=mujer&type=buzos" },
-      { name: "Camperas", href: "/productos?category=mujer&type=camperas" },
-      { name: "Calzado", href: "/productos?category=mujer&type=calzado" },
+      { name: "Buzos", href: "/productos?category=buzos" },
+      { name: "Camperas", href: "/productos?category=camperas" },
+      { name: "Calzado", href: "/productos?category=calzado" },
     ],
   },
   {
     name: "Niño/a",
     href: "/productos?category=ninos",
     subcategories: [
-      { name: "Niños", href: "/productos?category=ninos&gender=boys" },
-      { name: "Niñas", href: "/productos?category=ninos&gender=girls" },
-      { name: "Bebés", href: "/productos?category=ninos&age=baby" },
+      { name: "Niños", href: "/productos?category=ninos" },
+      { name: "Niñas", href: "/productos?category=ninas" },
+      { name: "Bebes", href: "/productos?category=bebes" },
     ],
   },
   {
     name: "Accesorios",
     href: "/productos?category=accesorios",
     subcategories: [
-      { name: "Gorras", href: "/productos?category=accesorios&type=gorras" },
+      { name: "Gorras", href: "/productos?category=gorras" },
       {
         name: "Relojes",
-        href: "/productos?category=accesorios&type=relojes",
+        href: "/productos?category=relojes",
       },
       {
         name: "Carteras",
-        href: "/productos?category=accesorios&type=carteras",
+        href: "/productos?category=carteras",
       },
       {
         name: "Cinturones",
-        href: "/productos?category=accesorios&type=cinturones",
+        href: "/productos?category=cinturones",
       },
     ],
   },
@@ -221,7 +207,8 @@ export function Navbar() {
   }, []);
 
   const fetchSuggestions = async (query: string) => {
-    if (query.length < 2) {
+    const q = query.trim();
+    if (q.length < 2) {
       setSuggestions([]);
       return;
     }
@@ -236,11 +223,17 @@ export function Navbar() {
     }> = [];
 
     try {
+      // escapa comodines para ilike
+      const escaped = q.replace(/[%_]/g, "\\$&");
+
       const { data: products } = await supabase
         .from("products")
         .select("name, id, image_url, price")
-        .ilike("name", `%${query}%`)
+        .ilike("name", `%${escaped}%`)
         .limit(5);
+
+      // si el usuario ya cambió el texto, no pisar con resultados viejos
+      if (q !== searchQuery.trim()) return;
 
       if (products) {
         products.forEach((product) => {
@@ -254,16 +247,17 @@ export function Navbar() {
         });
       }
 
+      const qLower = q.toLowerCase();
       const categoryMatches = categories.filter(
         (cat) =>
-          cat.name.toLowerCase().includes(query.toLowerCase()) ||
+          cat.name.toLowerCase().includes(qLower) ||
           cat.subcategories.some((sub) =>
-            sub.name.toLowerCase().includes(query.toLowerCase())
+            sub.name.toLowerCase().includes(qLower)
           )
       );
 
       categoryMatches.forEach((cat) => {
-        if (cat.name.toLowerCase().includes(query.toLowerCase())) {
+        if (cat.name.toLowerCase().includes(qLower)) {
           suggestions.push({
             type: "category",
             name: cat.name,
@@ -271,7 +265,7 @@ export function Navbar() {
           });
         }
         cat.subcategories.forEach((sub) => {
-          if (sub.name.toLowerCase().includes(query.toLowerCase())) {
+          if (sub.name.toLowerCase().includes(qLower)) {
             suggestions.push({
               type: "category",
               name: sub.name,
@@ -288,7 +282,8 @@ export function Navbar() {
   };
 
   const fetchMobileSuggestions = async (query: string) => {
-    if (query.length < 2) {
+    const q = query.trim();
+    if (q.length < 2) {
       setMobileSuggestions([]);
       return;
     }
@@ -303,11 +298,15 @@ export function Navbar() {
     }> = [];
 
     try {
+      const escaped = q.replace(/[%_]/g, "\\$&");
+
       const { data: products } = await supabase
         .from("products")
         .select("name, id, image_url, price")
-        .ilike("name", `%${query}%`)
+        .ilike("name", `%${escaped}%`)
         .limit(5);
+
+      if (q !== mobileSearchQuery.trim()) return;
 
       if (products) {
         products.forEach((product) => {
@@ -321,16 +320,17 @@ export function Navbar() {
         });
       }
 
+      const qLower = q.toLowerCase();
       const categoryMatches = categories.filter(
         (cat) =>
-          cat.name.toLowerCase().includes(query.toLowerCase()) ||
+          cat.name.toLowerCase().includes(qLower) ||
           cat.subcategories.some((sub) =>
-            sub.name.toLowerCase().includes(query.toLowerCase())
+            sub.name.toLowerCase().includes(qLower)
           )
       );
 
       categoryMatches.forEach((cat) => {
-        if (cat.name.toLowerCase().includes(query.toLowerCase())) {
+        if (cat.name.toLowerCase().includes(qLower)) {
           suggestions.push({
             type: "category",
             name: cat.name,
@@ -338,7 +338,7 @@ export function Navbar() {
           });
         }
         cat.subcategories.forEach((sub) => {
-          if (sub.name.toLowerCase().includes(query.toLowerCase())) {
+          if (sub.name.toLowerCase().includes(qLower)) {
             suggestions.push({
               type: "category",
               name: sub.name,
@@ -350,7 +350,7 @@ export function Navbar() {
 
       setMobileSuggestions(suggestions.slice(0, 8));
     } catch (error) {
-      console.error("Error fetching suggestions:", error);
+      console.error("Error fetching mobile suggestions:", error);
     }
   };
 

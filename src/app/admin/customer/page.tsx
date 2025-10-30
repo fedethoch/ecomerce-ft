@@ -79,14 +79,17 @@ export default function CustomersView() {
               <TableBody>
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
+                    {/* Cliente */}
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>
-                            {customer.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                            {(customer.name || "SN")
+                              .trim()
+                              .split(/\s+/)
+                              .map((n) => n[0]?.toUpperCase() ?? "")
+                              .join("")
+                              .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{customer.name}</span>

@@ -1,5 +1,4 @@
 import { ProductCard } from "@/components/ui/product-card";
-
 import { ProductType } from "@/types/products/products";
 
 interface ProductListProps {
