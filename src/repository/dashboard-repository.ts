@@ -30,14 +30,17 @@ export class DashboardRepository {
       .from("users")
       .select("*", { count: "exact", head: true })
 
+    // --- MODIFICACIÓN AQUÍ ---
     // Ventas totales
     const { data: salesData } = await supabase
       .from("orders")
       .select("total_amount")
-      .eq("status", "Completado")
+      // Filtramos por la columna `payment_status`, no `status`
+      .eq("payment_status", "paid") // <--- CORREGIDO
 
     const totalSales = salesData?.reduce((sum: number, order: any) => 
       sum + order.total_amount, 0) || 0
+    // --- FIN DE LA MODIFICACIÓN ---
 
     // Pedidos recientes
     const { data: recentOrders } = await supabase

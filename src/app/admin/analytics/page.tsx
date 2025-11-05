@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
-import { useAdminLayout } from "@/context/layout-context";
+// import { useAdminLayout } from "@/context/layout-context"; // <--- Eliminado
 import { useOrders } from "@/hooks/use-orders";
 import { useState } from "react";
 import {
@@ -39,7 +39,7 @@ const salesTrend = [
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function AnalyticsView() {
-  const { open } = useAdminLayout();
+  // const { open } = useAdminLayout(); // <--- Eliminado
   const { orders, loading, error, updateStatus } = useOrders();
   const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>(
     {}
@@ -57,9 +57,8 @@ export default function AnalyticsView() {
   };
 
   return (
-    <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-    >
+    // --- MODIFICACIÓN: Clases de layout eliminadas ---
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
         <p className="text-muted-foreground">

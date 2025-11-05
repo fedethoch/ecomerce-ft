@@ -146,9 +146,6 @@ export function ProductInfo({ product }: { product: ProductType }) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Talla</h3>
-          <Button variant="link" className="text-sm p-0 h-auto">
-            Guía de tallas
-          </Button>
         </div>
         <div className="grid grid-cols-4 gap-2">
           {(product.sizes ?? []).map((size) => (

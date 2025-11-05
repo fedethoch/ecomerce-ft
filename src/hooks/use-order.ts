@@ -1,33 +1,91 @@
 import { useState, useEffect } from "react"
-import { getOrder } from "@/controllers/orders-controller"
+// --- (MODIFICACIÓN 1: Importar la nueva Server Action) ---
+import { getOrders, updateOrderStatus, deleteOrder as deleteOrderAction } from "@/controllers/orders-controller"
+// --- (FIN MODIFICACIÓN 1) ---
 import { OrderWithDetails } from "@/types/orders/types"
 import { isAppActionError } from "@/lib/guards"
 
-export function useOrder(id: string) {
-  const [order, setOrder] = useState<OrderWithDetails | null>(null)
+export function useOrders() {
+  const [orders, setOrders] = useState<OrderWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true)
-        const response = await getOrder(id)
-        
-        if (isAppActionError(response)) {
-          setError(response.userMessage || "Error al cargar el pedido")
-        } else {
-          setOrder(response)
-        }
-      } catch (err) {
-        setError("Error inesperado al cargar el pedido")
-      } finally {
-        setLoading(false)
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const response = await getOrders()
+      
+      if (isAppActionError(response)) {
+        setError(response.userMessage || "Error al cargar pedidos")
+      } else {
+        setOrders(response)
       }
+    } catch (err) {
+      setError("Error inesperado al cargar pedidos")
+    } finally {
+      setLoading(false)
     }
+  }
 
-    if (id) fetchOrder()
-  }, [id])
+  // Función para actualizar el estado de una orden
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await updateOrderStatus(orderId, newStatus)
+      
+      if (isAppActionError(response)) {
+        setError(response.userMessage || "Error al actualizar el estado")
+        return false
+      }
 
-  return { order, loading, error }
+      // Actualizar el estado local
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      )
+      return true
+    } catch (err) {
+      setError("Error inesperado al actualizar el estado")
+      return false
+    }
+  }
+
+  // --- (MODIFICACIÓN 2: Nueva función para eliminar) ---
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      const response = await deleteOrderAction(orderId);
+
+      if (isAppActionError(response)) {
+        setError(response.userMessage || "Error al eliminar el pedido");
+        return false;
+      }
+
+      // Actualizar el estado local eliminando la orden
+      setOrders(prevOrders => 
+        prevOrders.filter(order => order.id !== orderId)
+      );
+      return true;
+
+    } catch (err) {
+      setError("Error inesperado al eliminar el pedido");
+      return false;
+    }
+  }
+  // --- (FIN MODIFICACIÓN 2) ---
+
+
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  // --- (MODIFICACIÓN 3: Exportar la nueva función) ---
+  return { 
+    orders, 
+    loading, 
+    error, 
+    updateStatus: handleUpdateStatus,
+    deleteOrder: handleDeleteOrder, // <-- Exportar la función
+    refetch: fetchOrders 
+  }
+  // --- (FIN MODIFICACIÓN 3) ---
 }

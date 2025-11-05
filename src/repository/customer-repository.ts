@@ -2,10 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CustomerType } from "@/types/customers/type";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { PublicUser } from "@/types/types";
-
-// Mejor: tipar lo que realmente vuelve de la DB
-type DbUser = Omit<PublicUser, "created_at"> & { created_at: string | undefined };
+// import { PublicUser } from "@/types/types"; // Ya no es necesario
 
 export class CustomersRepository {
   private supabase: SupabaseClient | null = null;
@@ -18,24 +15,19 @@ export class CustomersRepository {
   async getCustomers(): Promise<CustomerType[]> {
     const supabase = await this.getSupabase();
 
+    // --- MODIFICACIÓN AQUÍ ---
+    // Llamamos a la función RPC que creamos en la base de datos
     const { data, error } = await supabase
-      .from("users")
-      .select("id, email, name, phone, created_at, type_role")
-      .eq("type_role", "user")
-      .order("created_at", { ascending: false });
+      .rpc('get_customers_with_purchases');
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("Error al llamar RPC get_customers_with_purchases:", error);
+      throw new Error(error.message);
+    }
 
-    const rows = (data ?? []) as DbUser[];
-
-    return rows.map((u): CustomerType => ({
-      id: u.id,
-      name: u.name ?? (u.email ? u.email.split("@")[0] : "(Sin nombre)"),
-      email: u.email ?? "",
-      orders: 0,
-      spent: 0,
-      // 🔧 acá el fix: garantizamos string
-      createdAt: u.created_at ?? "", 
-    }));
+    // La data ya viene en el formato de CustomerType,
+    // incluyendo 'orders' y 'spent' calculados.
+    return (data ?? []) as CustomerType[];
+    // --- FIN DE LA MODIFICACIÓN ---
   }
 }

@@ -2,7 +2,7 @@
 
 import { OrdersService } from "@/services/orders-service"
 import { actionHandler } from "@/lib/handlers/actionHandler"
-import { OrderWithDetails } from "@/types/orders/types"
+import { Order, OrderWithDetails } from "@/types/orders/types" // <-- Importa Order
 import { AppActionError } from "@/types/types"
 
 const service = new OrdersService()
@@ -24,3 +24,11 @@ export const updateOrderStatus = async (id: string, status: string) => {
     return service.updateOrderStatus(id, status)
   })
 }
+
+// --- (MODIFICACIÓN: Nueva Server Action para eliminar) ---
+export const deleteOrder = async (id: string) => {
+  return actionHandler<Order>(async () => {
+    return service.deleteOrder(id)
+  })
+}
+// --- (FIN DE LA MODIFICACIÓN) ---

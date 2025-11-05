@@ -12,6 +12,12 @@ const sbAdmin = createClient(
 export class OrdersService {
   private repository = new OrdersRepository()
 
+  // --- (MODIFICACIÓN: Nueva función de eliminar) ---
+  async deleteOrder(id: string): Promise<Order> {
+    return this.repository.deleteOrder(id);
+  }
+  // --- (FIN DE LA MODIFICACIÓN) ---
+
   async getOrders(): Promise<OrderWithDetails[]> {
     return this.repository.getOrders()
   }
@@ -25,6 +31,7 @@ export class OrdersService {
   }
 
   // ========= EXISTENTES =========
+  // ... (el resto de tu archivo no necesita cambios) ...
   async createOrder(order: Partial<Order>): Promise<Order> {
     return this.repository.createOrder(order)
   }

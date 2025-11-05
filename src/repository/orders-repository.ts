@@ -16,6 +16,22 @@ export class OrdersRepository {
     return this.supabase;
   }
 
+  // --- (MODIFICACIÓN: Nueva función de eliminar) ---
+  async deleteOrder(id: string): Promise<Order> {
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single() // Devuelve el objeto eliminado
+
+    if (error) throw error;
+    return data as Order;
+  }
+  // --- (FIN DE LA MODIFICACIÓN) ---
+
+
   async getOrders(): Promise<OrderWithDetails[]> {
     const supabase = await this.getSupabase();
     const { data, error } = await supabase
@@ -51,7 +67,7 @@ export class OrdersRepository {
     const supabase = await this.getSupabase();
     const { data, error } = await supabase
       .from("orders")
-      .update({ status })
+      .update({ status }) // <-- Esto ya es genérico, ¡perfecto!
       .eq("id", id)
       .select(`
         *,
@@ -65,6 +81,7 @@ export class OrdersRepository {
   }
 
   // ========= EXISTENTES =========
+  // ... (el resto de tu archivo no necesita cambios) ...
 
   async createOrder(order: Partial<Order>): Promise<Order> {
     const supabase = await this.getSupabase();

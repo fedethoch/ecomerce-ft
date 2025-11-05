@@ -43,74 +43,44 @@ import path from "path";
 const categories = [
   {
     name: "Nuevo",
-    href: "/productos?category=nuevo",
+    href: "/productos?isNew=true",
     subcategories: [
       {
         name: "Últimas llegadas",
-        href: "/productos?category=nuevo&sort=latest",
+        href: "/productos?isNew=true&sort=latest",
       },
-      { name: "Tendencias", href: "/productos?category=nuevo" },
+      { name: "Tendencias", href: "/productos?isNew=true" },
     ],
   },
   {
     name: "Adulto",
-    href: "/productos?category=adulto",
+    href: "/productos",
     subcategories: [
-      { name: "Remeras", href: "/productos?category=remeras" },
+      { name: "Camisetas", href: "/productos?category=camisetas" },
       {
         name: "Pantalones",
         href: "/productos?category=pantalones",
       },
-      { name: "Buzos", href: "/productos?category=buzos" },
-      { name: "Camperas", href: "/productos?category=camperas" },
+      { name: "Chaquetas", href: "/productos?category=chaquetas" },
       { name: "Calzado", href: "/productos?category=calzado" },
     ],
   },
   {
     name: "Niño/a",
-    href: "/productos?category=ninos",
+    href: "/productos",
     subcategories: [
-      { name: "Niños", href: "/productos?category=ninos" },
-      { name: "Niñas", href: "/productos?category=ninas" },
-      { name: "Bebes", href: "/productos?category=bebes" },
+      { name: "Niños", href: "/productos" },
+      { name: "Niñas", href: "/productos" },
+      { name: "Bebes", href: "/productos" },
     ],
   },
   {
     name: "Accesorios",
     href: "/productos?category=accesorios",
-    subcategories: [
-      { name: "Gorras", href: "/productos?category=gorras" },
-      {
-        name: "Relojes",
-        href: "/productos?category=relojes",
-      },
-      {
-        name: "Carteras",
-        href: "/productos?category=carteras",
-      },
-      {
-        name: "Cinturones",
-        href: "/productos?category=cinturones",
-      },
-    ],
   },
   {
     name: "Ofertas",
-    href: "/productos?category=ofertas",
-    subcategories: [
-      {
-        name: "Hasta 30% OFF",
-        href: "/productos?category=ofertas&discount=30",
-      },
-      {
-        name: "Hasta 50% OFF",
-        href: "/productos?category=ofertas&discount=50",
-      },
-      {
-        name: "Liquidación",
-        href: "/productos?category=ofertas&clearance=true",
-      },
-    ],
+    href: "/productos?isSale=true",
   },
 ];
 
@@ -226,11 +196,17 @@ export function Navbar() {
       // escapa comodines para ilike
       const escaped = q.replace(/[%_]/g, "\\$&");
 
-      const { data: products } = await supabase
+      // --- MODIFICACIÓN 1 (DESKTOP) ---
+      const { data: products, error } = await supabase
         .from("products")
-        .select("name, id, image_url, price")
+        .select("name, id, image_paths, price") // Corregido: image_url -> image_paths
         .ilike("name", `%${escaped}%`)
         .limit(5);
+
+      if (error) {
+        console.error("Error fetching products:", error.message);
+      }
+      // --- FIN MODIFICACIÓN 1 ---
 
       // si el usuario ya cambió el texto, no pisar con resultados viejos
       if (q !== searchQuery.trim()) return;
@@ -241,7 +217,13 @@ export function Navbar() {
             type: "product",
             name: product.name,
             href: `/productos/${product.id}`,
-            image: product.image_url,
+            // --- MODIFICACIÓN 2 (DESKTOP) ---
+            // Tomamos la primera imagen del array image_paths
+            image:
+              product.image_paths && product.image_paths[0]
+                ? product.image_paths[0]
+                : undefined,
+            // --- FIN MODIFICACIÓN 2 ---
             price: product.price,
           });
         });
@@ -251,9 +233,10 @@ export function Navbar() {
       const categoryMatches = categories.filter(
         (cat) =>
           cat.name.toLowerCase().includes(qLower) ||
-          cat.subcategories.some((sub) =>
-            sub.name.toLowerCase().includes(qLower)
-          )
+          (cat.subcategories && // Comprobar si subcategories existe
+            cat.subcategories.some((sub) =>
+              sub.name.toLowerCase().includes(qLower)
+            ))
       );
 
       categoryMatches.forEach((cat) => {
@@ -264,15 +247,18 @@ export function Navbar() {
             href: cat.href,
           });
         }
-        cat.subcategories.forEach((sub) => {
-          if (sub.name.toLowerCase().includes(qLower)) {
-            suggestions.push({
-              type: "category",
-              name: sub.name,
-              href: sub.href,
-            });
-          }
-        });
+        if (cat.subcategories) {
+          // Comprobar si subcategories existe
+          cat.subcategories.forEach((sub) => {
+            if (sub.name.toLowerCase().includes(qLower)) {
+              suggestions.push({
+                type: "category",
+                name: sub.name,
+                href: sub.href,
+              });
+            }
+          });
+        }
       });
 
       setSuggestions(suggestions.slice(0, 8));
@@ -300,11 +286,17 @@ export function Navbar() {
     try {
       const escaped = q.replace(/[%_]/g, "\\$&");
 
-      const { data: products } = await supabase
+      // --- MODIFICACIÓN 3 (MOBILE) ---
+      const { data: products, error } = await supabase
         .from("products")
-        .select("name, id, image_url, price")
+        .select("name, id, image_paths, price") // Corregido: image_url -> image_paths
         .ilike("name", `%${escaped}%`)
         .limit(5);
+
+      if (error) {
+        console.error("Error fetching mobile products:", error.message);
+      }
+      // --- FIN MODIFICACIÓN 3 ---
 
       if (q !== mobileSearchQuery.trim()) return;
 
@@ -314,7 +306,12 @@ export function Navbar() {
             type: "product",
             name: product.name,
             href: `/productos/${product.id}`,
-            image: product.image_url,
+            // --- MODIFICACIÓN 4 (MOBILE) ---
+            image:
+              product.image_paths && product.image_paths[0]
+                ? product.image_paths[0]
+                : undefined,
+            // --- FIN MODIFICACIÓN 4 ---
             price: product.price,
           });
         });
@@ -324,9 +321,10 @@ export function Navbar() {
       const categoryMatches = categories.filter(
         (cat) =>
           cat.name.toLowerCase().includes(qLower) ||
-          cat.subcategories.some((sub) =>
-            sub.name.toLowerCase().includes(qLower)
-          )
+          (cat.subcategories && // Comprobar si subcategories existe
+            cat.subcategories.some((sub) =>
+              sub.name.toLowerCase().includes(qLower)
+            ))
       );
 
       categoryMatches.forEach((cat) => {
@@ -337,15 +335,18 @@ export function Navbar() {
             href: cat.href,
           });
         }
-        cat.subcategories.forEach((sub) => {
-          if (sub.name.toLowerCase().includes(qLower)) {
-            suggestions.push({
-              type: "category",
-              name: sub.name,
-              href: sub.href,
-            });
-          }
-        });
+        if (cat.subcategories) {
+          // Comprobar si subcategories existe
+          cat.subcategories.forEach((sub) => {
+            if (sub.name.toLowerCase().includes(qLower)) {
+              suggestions.push({
+                type: "category",
+                name: sub.name,
+                href: sub.href,
+              });
+            }
+          });
+        }
       });
 
       setMobileSuggestions(suggestions.slice(0, 8));
@@ -521,69 +522,88 @@ export function Navbar() {
             <div className="absolute left-1/2 -translate-x-1/2 transform">
               <nav className="hidden items-center lg:flex">
                 <div className="flex items-center space-x-1">
-                  {categories.map((category) => (
-                    <div
-                      key={category.name}
-                      className="group relative"
-                      onMouseEnter={() => setHoveredCategory(category.name)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                    >
-                      <Link
-                        href={category.href}
-                        className="relative flex items-center overflow-hidden rounded-lg px-4 py-3 text-sm font-semibold text-[#0B1220] transition-all duration-300 hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A]"
-                      >
-                        <span className="relative z-10">{category.name}</span>
-                        <ChevronDown className="ml-1 h-3 w-3 transition-all duration-300 group-hover:rotate-180 group-hover:text-[#8B1E3F]" />
-                        <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-r from-transparent via-[#D6C6B2]/20 to-transparent" />
-                      </Link>
+                  {/* --- Lógica de renderizado condicional --- */}
+                  {categories.map((category) => {
+                    const hasDropdown =
+                      category.subcategories &&
+                      category.subcategories.length > 0;
 
-                      {/* Dropdown */}
+                    return hasDropdown ? (
+                      // --- LÓGICA (CON DROPDOWN) ---
                       <div
-                        className={cn(
-                          "absolute left-1/2 top-full z-50 mt-3 w-72 -translate-x-1/2 transform rounded-2xl border border-[#E7E5E4] bg-white/95 backdrop-blur-md shadow-2xl transition-all duration-300",
-                          hoveredCategory === category.name
-                            ? "visible translate-y-0 opacity-100"
-                            : "invisible translate-y-2 opacity-0"
-                        )}
+                        key={category.name}
+                        className="group relative"
+                        onMouseEnter={() => setHoveredCategory(category.name)}
+                        onMouseLeave={() => setHoveredCategory(null)}
                       >
-                        <div className="p-6">
-                          <div className="grid gap-2">
-                            {category.subcategories.map((sub) => (
-                              <Link
-                                key={sub.name}
-                                href={sub.href}
-                                className="group flex items-center gap-3 rounded-xl border border-transparent p-4 transition-all duration-200 hover:border-[#D6C6B2] hover:bg-[#D6C6B2]/15 hover:shadow-sm"
-                              >
-                                <div className="flex-1">
-                                  <span className="block font-medium text-[#0B1220] transition-colors duration-200 group-hover:text-[#1E3A8A]">
-                                    {sub.name}
-                                  </span>
-                                </div>
-                                <div className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                  <ChevronDown className="h-4 w-4 -rotate-90 text-[#6B7280]" />
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
+                        <Link
+                          href={category.href}
+                          className="relative flex items-center overflow-hidden rounded-lg px-4 py-3 text-sm font-semibold text-[#0B1220] transition-all duration-300 hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A]"
+                        >
+                          <span className="relative z-10">{category.name}</span>
+                          <ChevronDown className="ml-1 h-3 w-3 transition-all duration-300 group-hover:rotate-180 group-hover:text-[#8B1E3F]" />
+                          <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-r from-transparent via-[#D6C6B2]/20 to-transparent" />
+                        </Link>
 
-                          <div className="mt-5 border-t border-[#E7E5E4] pt-4">
-                            <Link
-                              href={category.href}
-                              className="group flex items-center gap-2 text-sm font-semibold text-[#8B1E3F] transition-colors duration-200 hover:text-[#711732]"
-                            >
-                              <span>Ver toda la colección</span>
-                              <ChevronDown className="h-3 w-3 -rotate-90 transition-transform duration-200 group-hover:translate-x-1" />
-                            </Link>
+                        {/* --- Dropdown opaco --- */}
+                        <div
+                          className={cn(
+                            "absolute left-1/2 top-full z-50 mt-3 w-72 -translate-x-1/2 transform rounded-2xl border border-[#E7E5E4] bg-white shadow-2xl transition-all duration-300",
+                            hoveredCategory === category.name
+                              ? "visible translate-y-0 opacity-100"
+                              : "invisible translate-y-2 opacity-0"
+                          )}
+                        >
+                          <div className="p-6">
+                            <div className="grid gap-2">
+                              {category.subcategories.map((sub) => (
+                                <Link
+                                  key={sub.name}
+                                  href={sub.href}
+                                  className="group flex items-center gap-3 rounded-xl border border-transparent p-4 transition-all duration-200 hover:border-[#D6C6B2] hover:bg-[#D6C6B2]/15 hover:shadow-sm"
+                                >
+                                  <div className="flex-1">
+                                    <span className="block font-medium text-[#0B1220] transition-colors duration-200 group-hover:text-[#1E3A8A]">
+                                      {sub.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                                    <ChevronDown className="h-4 w-4 -rotate-90 text-[#6B7280]" />
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+
+                            <div className="mt-5 border-t border-[#E7E5E4] pt-4">
+                              <Link
+                                href={category.href}
+                                className="group flex items-center gap-2 text-sm font-semibold text-[#8B1E3F] transition-colors duration-200 hover:text-[#711732]"
+                              >
+                                <span>Ver toda la colección</span>
+                                <ChevronDown className="h-3 w-3 -rotate-90 transition-transform duration-200 group-hover:translate-x-1" />
+                              </Link>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      // --- LÓGICA (SOLO ENLACE) ---
+                      <div key={category.name} className="relative">
+                        <Link
+                          href={category.href}
+                          className="relative flex items-center overflow-hidden rounded-lg px-4 py-3 text-sm font-semibold text-[#0B1color] transition-all duration-300 hover:bg-[#D6C6B2]/30 hover:text-[#1E3A8A] group"
+                        >
+                          <span className="relative z-10">{category.name}</span>
+                          <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-r from-transparent via-[#D6C6B2]/20 to-transparent" />
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               </nav>
             </div>
 
-            {/* Right Section - Search, User, Cart */}
+            {/* Right Section - Search, User, Cart (Sin cambios) */}
             <div className="flex flex-1 items-center justify-end space-x-2 sm:space-x-4">
               <div
                 className="hidden items-center transition-all duration-300 ease-in-out md:flex"
@@ -1047,38 +1067,51 @@ export function Navbar() {
                               collapsible
                               className="space-y-2"
                             >
-                              {categories.map((category) => (
-                                <AccordionItem
-                                  key={category.name}
-                                  value={category.name}
-                                  className="border-none"
-                                >
-                                  <AccordionTrigger className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3.5 text-base font-bold text-[#0B1220] hover:bg-white hover:text-[#1E3A8A] hover:no-underline transition-all duration-200 shadow-sm [&[data-state=open]]:bg-white [&[data-state=open]]:text-[#1E3A8A]">
-                                    {category.name}
-                                  </AccordionTrigger>
-                                  <AccordionContent className="pt-2 pb-0">
-                                    <div className="space-y-1 pl-3">
-                                      {category.subcategories.map((sub) => (
+                              {categories.map((category) =>
+                                // --- Lógica condicional para el menú móvil ---
+                                category.subcategories &&
+                                category.subcategories.length > 0 ? (
+                                  <AccordionItem
+                                    key={category.name}
+                                    value={category.name}
+                                    className="border-none"
+                                  >
+                                    <AccordionTrigger className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3.5 text-base font-bold text-[#0B1220] hover:bg-white hover:text-[#1E3A8A] hover:no-underline transition-all duration-200 shadow-sm [&[data-state=open]]:bg-white [&[data-state=open]]:text-[#1E3A8A]">
+                                      {category.name}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-2 pb-0">
+                                      <div className="space-y-1 pl-3">
+                                        {category.subcategories.map((sub) => (
+                                          <Link
+                                            key={sub.name}
+                                            href={sub.href}
+                                            className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-[#6B7280] hover:bg-[#D6C6B2]/20 hover:text-[#0B1220] transition-all duration-200 active:scale-[0.98]"
+                                          >
+                                            <div className="h-1.5 w-1.5 rounded-full bg-[#D6C6B2]" />
+                                            {sub.name}
+                                          </Link>
+                                        ))}
                                         <Link
-                                          key={sub.name}
-                                          href={sub.href}
-                                          className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-[#6B7280] hover:bg-[#D6C6B2]/20 hover:text-[#0B1220] transition-all duration-200 active:scale-[0.98]"
+                                          href={category.href}
+                                          className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-[#8B1E3F] hover:bg-[#8B1E3F]/10 hover:text-[#711732] transition-all duration-200 active:scale-[0.98] mt-2"
                                         >
-                                          <div className="h-1.5 w-1.5 rounded-full bg-[#D6C6B2]" />
-                                          {sub.name}
+                                          <span>Ver toda la colección</span>
+                                          <ChevronDown className="h-3 w-3 -rotate-90" />
                                         </Link>
-                                      ))}
-                                      <Link
-                                        href={category.href}
-                                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-[#8B1E3F] hover:bg-[#8B1E3F]/10 hover:text-[#711732] transition-all duration-200 active:scale-[0.98] mt-2"
-                                      >
-                                        <span>Ver toda la colección</span>
-                                        <ChevronDown className="h-3 w-3 -rotate-90" />
-                                      </Link>
-                                    </div>
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                ) : (
+                                  // Renderiza un enlace simple si no hay subcategorías
+                                  <Link
+                                    key={category.name}
+                                    href={category.href}
+                                    className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3.5 text-base font-bold text-[#0B1220] hover:bg-white hover:text-[#1E3A8A] hover:no-underline transition-all duration-200 shadow-sm"
+                                  >
+                                    {category.name}
+                                  </Link>
+                                )
+                              )}
                             </Accordion>
                           </div>
                         </div>

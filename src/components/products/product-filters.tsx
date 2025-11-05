@@ -42,7 +42,6 @@ export function ProductFilters({
     { id: "all", label: "Todas las categorías" },
     { id: "camisetas", label: "Camisetas" },
     { id: "pantalones", label: "Pantalones" },
-    { id: "vestidos", label: "Vestidos" },
     { id: "chaquetas", label: "Chaquetas" },
     { id: "calzado", label: "Calzado" },
     { id: "accesorios", label: "Accesorios" },
@@ -118,23 +117,53 @@ export function ProductFilters({
     onFilterChange(newFilters);
   };
 
-  // Handle initial filters from URL
-  useEffect(() => {
-    if (initialFilters) {
-      const newFilters = {
-        category: initialFilters.category ?? "all",
-        priceRange: initialFilters.priceRange ?? [0, 100000],
-        sizes: initialFilters.sizes ?? [],
-        search: initialFilters.search ?? "",
-        isNew: Boolean(initialFilters.isNew),
-        isSale: Boolean(initialFilters.isSale),
-      };
+  // --- MODIFICACIÓN AQUÍ ---
 
-      setFilters(newFilters);
-      setSearchInput(initialFilters.search ?? "");
-      onFilterChange(newFilters);
-    }
-  }, [initialFilters]);
+  // Desestructuramos los valores de initialFilters para usarlos en el array de dependencias.
+  // Esto hace que el efecto sea más estable y solo se ejecute si los *valores* cambian,
+  // no solo la referencia del objeto.
+  const {
+    category: initialCategory,
+    priceRange: initialPriceRange,
+    sizes: initialSizes,
+    search: initialSearch,
+    isNew: initialIsNew,
+    isSale: initialIsSale,
+  } = initialFilters || {}; // Usamos || {} para evitar errores si initialFilters es undefined
+
+  // Handle filters from URL (cuando cambia el prop `initialFilters`)
+  useEffect(() => {
+    // Sincroniza el estado interno del componente con los filtros de la URL
+    // cuando estos cambian (ej. al usar el Navbar)
+    
+    const newFilters = {
+      category: initialCategory ?? "all",
+      priceRange: initialPriceRange ?? [0, 100000],
+      sizes: initialSizes ?? [],
+      search: initialSearch ?? "",
+      isNew: Boolean(initialIsNew),
+      isSale: Boolean(initialIsSale),
+    };
+
+    setFilters(newFilters);
+    setSearchInput(newFilters.search);
+
+    // NO LLAMAMOS a onFilterChange(newFilters) aquí.
+    // El padre (la página) ya está reaccionando al cambio de URL
+    // y pidiendo los nuevos productos. Este efecto solo
+    // debe actualizar la UI de los filtros.
+    
+  }, [
+    // Usamos los valores desestructurados en el array de dependencias
+    initialCategory,
+    initialPriceRange,
+    initialSizes,
+    initialSearch,
+    initialIsNew,
+    initialIsSale,
+  ]);
+  
+  // --- FIN DE LA MODIFICACIÓN ---
 
   return (
     <Card className="sticky top-4">
@@ -161,7 +190,7 @@ export function ProductFilters({
 
         <Separator />
 
-                {/* NUEVO: Estado */}
+        {/* NUEVO: Estado */}
         <div>
           <h3 className="font-medium mb-3">Estado</h3>
           <div className="space-y-2">
@@ -169,7 +198,9 @@ export function ProductFilters({
               <Checkbox
                 id="isNew"
                 checked={filters.isNew}
-                onCheckedChange={(checked) => handleIsNewChange(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleIsNewChange(checked as boolean)
+                }
                 type="button"
               />
               <Label htmlFor="isNew" className="text-sm">
@@ -180,7 +211,9 @@ export function ProductFilters({
               <Checkbox
                 id="isSale"
                 checked={filters.isSale}
-                onCheckedChange={(checked) => handleIsSaleChange(checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleIsSaleChange(checked as boolean)
+                }
                 type="button"
               />
               <Label htmlFor="isSale" className="text-sm">

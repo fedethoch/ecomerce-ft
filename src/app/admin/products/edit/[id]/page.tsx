@@ -21,12 +21,12 @@ import {
 import { useProducts } from "@/hooks/use-products";
 import { useRef } from "react";
 import type { ProductType } from "@/types/products/products";
-import { uploadProductImages } from "@/controllers/storage-controller"; // Asegúrate de importar esto
+import { uploadProductImages } from "@/controllers/storage-controller";
 import { useRouter, useParams } from "next/navigation";
-import { useAdminLayout } from "@/context/layout-context";
+// import { useAdminLayout } from "@/context/layout-context"; // <--- Eliminado
 
 export default function Page() {
-  const { open } = useAdminLayout();
+  // const { open } = useAdminLayout(); // <--- Eliminado
   const router = useRouter();
   const params = useParams();
   const productId = String(params?.id ?? "");
@@ -47,6 +47,8 @@ export default function Page() {
     imagePaths: [],
     description: "",
   });
+
+  // ... (Toda la lógica de handleSubmit, useEffect, etc. se mantiene igual) ...
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -216,9 +218,8 @@ export default function Page() {
 
   if (Loading) {
     return (
-      <div
-        className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-      >
+      // --- MODIFICACIÓN 1: Estructura idéntica a create/page.tsx ---
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
@@ -243,260 +244,316 @@ export default function Page() {
   }
 
   return (
-    <div
-      className={`space-y-6 p-8 transition-all duration-300 ${open ? "ml-64" : "ml-16"}`}
-    >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Editar Producto
-            </h1>
-            <p className="text-muted-foreground">
-              Añade un nuevo producto a tu inventario
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/products")}
-          >
-            Volver a Productos
-          </Button>
+    // --- MODIFICACIÓN 2: Estructura idéntica a create/page.tsx ---
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Editar Producto</h1>
+          <p className="text-muted-foreground">
+            Añade un nuevo producto a tu inventario
+          </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/admin/products")}
+        >
+          Volver a Productos
+        </Button>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Información Básica</CardTitle>
-                <CardDescription>
-                  Detalles principales del producto
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre del Producto</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ej: Camiseta Básica Blanca"
-                    value={formData.name ?? ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    required
-                  />
-                </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* --- El resto del formulario es idéntico --- */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Información Básica</CardTitle>
+              <CardDescription>
+                Detalles principales del producto
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nombre del Producto</Label>
+                <Input
+                  id="name"
+                  placeholder="Ej: Camiseta Básica Blanca"
+                  value={formData.name ?? ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  required
+                />
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Precio</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={formData.price === 0 ? "" : formData.price}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData((prev) => ({
-                          ...prev,
-                          price: value === "" ? 0 : Number.parseFloat(value),
-                        }));
-                      }}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="original_price">
-                      Precio Original (opcional)
-                    </Label>
-                    <Input
-                      id="original_price"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={
-                        formData.originalPrice === 0
-                          ? ""
-                          : formData.originalPrice
-                      }
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData((prev) => ({
-                          ...prev,
-                          originalPrice:
-                            value === "" ? 0 : Number.parseFloat(value),
-                        }));
-                      }}
-                    />
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">Stock</Label>
+                  <Label htmlFor="price">Precio</Label>
                   <Input
-                    id="quantity"
+                    id="price"
                     type="number"
-                    step="1"
-                    placeholder="0"
-                    value={formData.quantity === 0 ? "" : formData.quantity} // Muestra vacío cuando es 0
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.price === 0 ? "" : formData.price}
                     onChange={(e) => {
                       const value = e.target.value;
                       setFormData((prev) => ({
                         ...prev,
-                        quantity: value === "" ? 0 : Number.parseInt(value),
+                        price: value === "" ? 0 : Number.parseFloat(value),
                       }));
                     }}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
+                  <Label htmlFor="original_price">
+                    Precio Original (opcional)
+                  </Label>
                   <Input
-                    id="description"
-                    placeholder="Descripción del producto"
-                    value={formData.description}
+                    id="original_price"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={
+                      formData.originalPrice === 0
+                        ? ""
+                        : formData.originalPrice
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        originalPrice:
+                          value === "" ? 0 : Number.parseFloat(value),
+                      }));
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantity">Stock</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  step="1"
+                  placeholder="0"
+                  value={formData.quantity === 0 ? "" : formData.quantity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      quantity: value === "" ? 0 : Number.parseInt(value),
+                    }));
+                  }}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción</Label>
+                <Input
+                  id="description"
+                  placeholder="Descripción del producto"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  minLength={10}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoría</Label>
+                <Select
+                  value={formData.category ?? ""}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="camisetas">Camisetas</SelectItem>
+                    <SelectItem value="pantalones">Pantalones</SelectItem>
+                    <SelectItem value="vestidos">Vestidos</SelectItem>
+                    <SelectItem value="chaquetas">Chaquetas</SelectItem>
+                    <SelectItem value="calzado">Calzado</SelectItem>
+                    <SelectItem value="accesorios">Accesorios</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_new"
+                    checked={formData.isNew}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        description: e.target.value,
+                        isNew: e.target.checked,
                       }))
                     }
-                    minLength={10}
-                    required
                   />
+                  <Label htmlFor="is_new">Producto Nuevo</Label>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoría</Label>
-                  <Select
-                    value={formData.category ?? ""}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, category: value }))
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="is_sale"
+                    checked={formData.isSale}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        isSale: e.target.checked,
+                      }))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="camisetas">Camisetas</SelectItem>
-                      <SelectItem value="pantalones">Pantalones</SelectItem>
-                      <SelectItem value="vestidos">Vestidos</SelectItem>
-                      <SelectItem value="chaquetas">Chaquetas</SelectItem>
-                      <SelectItem value="calzado">Calzado</SelectItem>
-                      <SelectItem value="accesorios">Accesorios</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                  <Label htmlFor="is_sale">En Oferta</Label>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="flex gap-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_new"
-                      checked={formData.isNew}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          isNew: e.target.checked,
-                        }))
+          <Card>
+            <CardHeader>
+              <CardTitle>Variantes</CardTitle>
+              <CardDescription>
+                Configura tallas y otros detalles
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="sizes">Tallas Disponibles</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
+                    <Button
+                      key={size}
+                      type="button"
+                      variant={
+                        (formData.sizes ?? []).includes(size)
+                          ? "default"
+                          : "outline"
                       }
-                    />
-                    <Label htmlFor="is_new">Producto Nuevo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_sale"
-                      checked={formData.isSale}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          isSale: e.target.checked,
-                        }))
-                      }
-                    />
-                    <Label htmlFor="is_sale">En Oferta</Label>
-                  </div>
+                      size="sm"
+                      onClick={() => toggleSize(size)}
+                    >
+                      {size}
+                    </Button>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Variantes</CardTitle>
-                <CardDescription>
-                  Configura tallas y otros detalles
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sizes">Tallas Disponibles</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
-                      <Button
-                        key={size}
-                        type="button"
-                        variant={
-                          (formData.sizes ?? []).includes(size)
-                            ? "default"
-                            : "outline"
-                        }
-                        size="sm"
-                        onClick={() => toggleSize(size)}
+              <div className="space-y-2">
+                <Label>Imágenes</Label>
+                <div className="flex items-start gap-3 flex-wrap flex-col">
+                  {/* ... (lógica de imágenes idéntica) ... */}
+                  <div className="flex gap-4 flex-wrap mb-2">
+                    {formData.imagePaths.map((url, idx) => (
+                      <div
+                        key={`prev-${url}`}
+                        className="relative group flex flex-col items-center"
+                        style={{ width: 90 }}
                       >
-                        {size}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Imágenes</Label>
-                  <div className="flex items-start gap-3 flex-wrap flex-col">
-                    {/* Todas las imágenes (previas y nuevas) en una sola línea */}
-                    <div className="flex gap-4 flex-wrap mb-2">
-                      {/* Imágenes previas (URLs) */}
-                      {formData.imagePaths.map((url, idx) => (
                         <div
-                          key={`prev-${url}`}
-                          className="relative group flex flex-col items-center"
-                          style={{ width: 90 }}
-                        >
-                          <div
-                            className={`rounded-lg overflow-hidden border transition-all duration-300
+                          className={`rounded-lg overflow-hidden border transition-all duration-300
                             ${
                               idx === mainImageIndex
                                 ? "ring-2 ring-blue-500 scale-105 shadow-lg"
                                 : "hover:ring-2 hover:ring-blue-300"
                             }
                           `}
-                            style={{ width: 80, height: 80, cursor: "pointer" }}
-                            onClick={() => setMainImageIndex(idx)}
+                          style={{ width: 80, height: 80, cursor: "pointer" }}
+                          onClick={() => setMainImageIndex(idx)}
+                        >
+                          <img
+                            src={url}
+                            alt={`Imagen ${idx + 1}`}
+                            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
+                          />
+                          {idx === mainImageIndex && (
+                            <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
+                              Principal
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs max-w-[80px] truncate mt-2 text-center">{`Imagen ${idx + 1}`}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              imagePaths: prev.imagePaths.filter(
+                                (_, i) => i !== idx
+                              ),
+                            }));
+                            if (idx === mainImageIndex) setMainImageIndex(0);
+                            else if (idx < mainImageIndex)
+                              setMainImageIndex(mainImageIndex - 1);
+                          }}
+                          className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
+                          title="Eliminar imagen"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    {imageFiles.map((file, idx) => {
+                      const realIdx = formData.imagePaths.length + idx;
+                      return (
+                        <div
+                          key={`new-${file.name}-${idx}`}
+                          className="relative group flex flex-col items-center"
+                          style={{ width: 90 }}
+                        >
+                          <div
+                            className={`rounded-lg overflow-hidden border transition-all duration-300
+                              ${
+                                realIdx === mainImageIndex
+                                  ? "ring-2 ring-blue-500 scale-105 shadow-lg"
+                                  : "hover:ring-2 hover:ring-blue-300"
+                              }
+                          `}
+                            style={{
+                              width: 80,
+                              height: 80,
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setMainImageIndex(realIdx)}
                           >
                             <img
-                              src={url}
-                              alt={`Imagen ${idx + 1}`}
+                              src={URL.createObjectURL(file)}
+                              alt={file.name}
                               className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
                             />
-                            {idx === mainImageIndex && (
+                            {realIdx === mainImageIndex && (
                               <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
                                 Principal
                               </span>
                             )}
                           </div>
-                          <span className="text-xs max-w-[80px] truncate mt-2 text-center">{`Imagen ${idx + 1}`}</span>
+                          <span className="text-xs max-w-[80px] truncate mt-2 text-center">
+                            {file.name}
+                          </span>
                           <button
                             type="button"
-                            onClick={() => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                imagePaths: prev.imagePaths.filter(
-                                  (_, i) => i !== idx
-                                ),
-                              }));
-                              if (idx === mainImageIndex) setMainImageIndex(0);
-                              else if (idx < mainImageIndex)
-                                setMainImageIndex(mainImageIndex - 1);
-                            }}
+                            onClick={() => handleRemoveImage(idx)}
                             className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
                             title="Eliminar imagen"
                           >
@@ -516,114 +573,50 @@ export default function Page() {
                             </svg>
                           </button>
                         </div>
-                      ))}
-                      {/* Imágenes nuevas (Files) */}
-                      {imageFiles.map((file, idx) => {
-                        // El índice real en la lista combinada es después de las previas
-                        const realIdx = formData.imagePaths.length + idx;
-                        return (
-                          <div
-                            key={`new-${file.name}-${idx}`}
-                            className="relative group flex flex-col items-center"
-                            style={{ width: 90 }}
-                          >
-                            <div
-                              className={`rounded-lg overflow-hidden border transition-all duration-300
-                              ${
-                                realIdx === mainImageIndex
-                                  ? "ring-2 ring-blue-500 scale-105 shadow-lg"
-                                  : "hover:ring-2 hover:ring-blue-300"
-                              }
-                          `}
-                              style={{
-                                width: 80,
-                                height: 80,
-                                cursor: "pointer",
-                              }}
-                              onClick={() => setMainImageIndex(realIdx)}
-                            >
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt={file.name}
-                                className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
-                              />
-                              {realIdx === mainImageIndex && (
-                                <span className="absolute top-1 left-1 bg-gradient-to-r from-blue-500 to-blue-400 text-white text-xs px-2 py-0.5 rounded shadow font-semibold z-10">
-                                  Principal
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-xs max-w-[80px] truncate mt-2 text-center">
-                              {file.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(idx)}
-                              className="mt-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow transition-colors duration-200"
-                              title="Eliminar imagen"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Botón para seleccionar imágenes */}
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        multiple
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        Seleccionar Imágenes
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Imágenes del Producto
-                      <br />
-                      Formatos: JPG, PNG, WEBP. Máx. 5MB
-                    </p>
+                      );
+                    })}
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      multiple
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Seleccionar Imágenes
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Imágenes del Producto
+                    <br />
+                    Formatos: JPG, PNG, WEBP. Máx. 5MB
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/admin/products")}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={Loading}>
-              {Loading ? "Editando" : "Editar Producto"}
-            </Button>
-          </div>
-        </form>
-      </div>
+        <div className="flex justify-end space-x-2 mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/admin/products")}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={Loading}>
+            {Loading ? "Editando" : "Editar Producto"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

@@ -3,26 +3,30 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 
 export function CategorySection() {
+
+  // --- MODIFICACIÓN AQUÍ ---
+  // Cambiamos los href para que apunten a /productos (todos)
   const categories = [
     {
       name: "Hombre",
-      href: "/productos?category=hombre",
+      href: "/productos", // Corregido
       image: "/men-category.jpg",
       description: "Estilo masculino contemporáneo",
     },
     {
       name: "Mujer",
-      href: "/productos?category=mujer",
+      href: "/productos", // Corregido
       image: "/women-category.jpg",
       description: "Elegancia y sofisticación",
     },
     {
       name: "Niño/a",
-      href: "/productos?category=nino",
+      href: "/productos", // Corregido
       image: "/children-category.jpg",
       description: "Moda infantil divertida y cómoda",
     },
   ]
+  // --- FIN DE LA MODIFICACIÓN ---
 
   return (
     <section className="w-full bg-background">

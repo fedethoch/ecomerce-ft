@@ -234,7 +234,6 @@ export default function Page() {
                   <SelectContent>
                     <SelectItem value="camisetas">Camisetas</SelectItem>
                     <SelectItem value="pantalones">Pantalones</SelectItem>
-                    <SelectItem value="vestidos">Vestidos</SelectItem>
                     <SelectItem value="chaquetas">Chaquetas</SelectItem>
                     <SelectItem value="calzado">Calzado</SelectItem>
                     <SelectItem value="accesorios">Accesorios</SelectItem>

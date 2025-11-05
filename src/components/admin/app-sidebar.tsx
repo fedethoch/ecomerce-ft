@@ -9,7 +9,7 @@ import {
   Package,
   ShoppingCart,
   Users,
-  Settings,
+  // Settings, // <--- Eliminado
   User,
   LogOut,
   PanelLeft,
@@ -42,15 +42,17 @@ type AppSidebarProps = {
   onToggle: () => void;
 };
 
+// --- MODIFICACIÓN: Eliminada la entrada de "Configuración" ---
 const navigationItems = [
   { title: "Dashboard", icon: Home, id: "dashboard" },
   { title: "Productos", icon: Package, id: "products" },
   { title: "Pedidos", icon: ShoppingCart, id: "orders" },
   { title: "Clientes", icon: Users, id: "customer" },
   { title: "Analytics", icon: BarChart3, id: "analytics" },
-  { title: "Configuración", icon: Settings, id: "settings" },
+  // { title: "Configuración", icon: Settings, id: "settings" }, // <--- Eliminado
   { title: "Go back", icon: ArrowLeft, id: "back" },
 ];
+// --- FIN DE LA MODIFICACIÓN ---
 
 // --- Helpers ruta <-> vista ---
 function segmentsFromPath(pathname: string): string[] {
@@ -64,7 +66,8 @@ function activeViewFromPath(pathname: string): string {
   if (!first) return "dashboard";
   if (first === "products") return "products"; // incluye /new y /:id/edit
   if (
-    ["orders", "customer", "analytics", "settings", "dashboard"].includes(first)
+    // "settings" eliminado de la lista
+    ["orders", "customer", "analytics", "dashboard"].includes(first)
   )
     return first;
   return "dashboard";
@@ -82,8 +85,7 @@ function pathForView(view: string): string {
       return "/admin/customer";
     case "analytics":
       return "/admin/analytics";
-    case "settings":
-      return "/profile";
+    // "settings" eliminado del switch
     case "back":
       return "/";
     default:
@@ -310,10 +312,12 @@ export function AppSidebar() {
                       <User className="mr-2 h-4 w-4" />
                       <span>Perfil</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    {/* --- MODIFICACIÓN: Eliminada la opción de Configuración --- */}
+                    {/* <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Configuración</span>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
+                    {/* --- FIN DE LA MODIFICACIÓN --- */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                       <LogOut className="mr-2 h-4 w-4" />

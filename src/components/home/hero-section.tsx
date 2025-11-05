@@ -80,10 +80,12 @@ export function HeroSection() {
               size="lg"
               className="rounded-full border-2 border-accent px-10 py-7 text-lg font-semibold text-white shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:bg-accent hover:text-accent-foreground"
             >
+              {/* --- MODIFICACIÓN AQUÍ --- */}
               <Link
-                href="/productos?category=nuevos"
+                href="/productos?isNew=true"
                 className="flex items-center gap-2"
               >
+              {/* --- FIN DE LA MODIFICACIÓN --- */}
                 Ver Novedades
                 <svg
                   className="h-5 w-5"

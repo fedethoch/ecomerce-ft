@@ -1,11 +1,13 @@
 "use client";
 
 import {
-  Eye,
-  Edit,
   MoreHorizontal,
   Loader2,
   AlertTriangle,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -38,12 +40,22 @@ import { getOrderStatusBadgeVariant } from "@/lib/helpers/order-helpers";
 import { useAdminLayout } from "@/context/layout-context";
 
 export default function OrdersView() {
-  const { orders, loading, error, updateStatus } = useOrders();
+  const { orders, loading, error, updateStatus, deleteOrder } = useOrders();
   const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>(
     {}
   );
   const { open } = useAdminLayout();
+
+  // --- MODIFICACIÓN: Corregir bug de foco ---
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    // Retrasamos el blur() para que se ejecute DESPUÉS de que el menú se cierre
+    setTimeout(() => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }, 0);
+    // --- FIN MODIFICACIÓN ---
+
     try {
       setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
       await updateStatus(orderId, newStatus);
@@ -53,6 +65,30 @@ export default function OrdersView() {
       setUpdatingOrders((prev) => ({ ...prev, [orderId]: false }));
     }
   };
+
+  // --- MODIFICACIÓN: Corregir bug de foco ---
+  const handleDelete = async (orderId: string) => {
+    // Retrasamos el blur()
+    setTimeout(() => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }, 0);
+    // --- FIN MODIFICACIÓN ---
+
+    if (!window.confirm("¿Seguro que quieres eliminar este pedido?")) {
+      return;
+    }
+    try {
+      setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
+      await deleteOrder(orderId);
+    } catch (err) {
+      console.error("Error al eliminar pedido:", err);
+    } finally {
+      setUpdatingOrders((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+  // --- FIN MODIFICACIONES ---
 
   if (loading) {
     return (
@@ -165,42 +201,40 @@ export default function OrdersView() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalles
-                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            handleStatusUpdate(order.id, "Procesando")
+                            handleStatusUpdate(order.id, "success")
                           }
                           disabled={updatingOrders[order.id]}
                         >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Procesando"}
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                          Marcar como Success
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            handleStatusUpdate(order.id, "Enviado")
+                            handleStatusUpdate(order.id, "pending")
                           }
                           disabled={updatingOrders[order.id]}
                         >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Enviado"}
+                          <Clock className="h-4 w-4 mr-2 text-yellow-500" />
+                          Marcar como Pending
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            handleStatusUpdate(order.id, "Completado")
+                            handleStatusUpdate(order.id, "cancelled")
                           }
                           disabled={updatingOrders[order.id]}
                         >
-                          <Edit className="h-4 w-4 mr-2" />
-                          {updatingOrders[order.id]
-                            ? "Actualizando..."
-                            : "Marcar como Completado"}
+                          <XCircle className="h-4 w-4 mr-2 text-gray-500" />
+                          Marcar como Cancelled
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          onClick={() => handleDelete(order.id)}
+                          disabled={updatingOrders[order.id]}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
