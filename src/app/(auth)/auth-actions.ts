@@ -1,37 +1,41 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin-client"; // Asumo que tienes este archivo por tu 'orders-repository'
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
 export async function handlePasswordResetRequest(
   email: string,
   redirectUrl: string
 ) {
-  // Cliente público para enviar el correo
-  const supabase = createClient();
-  // Cliente Admin para inspeccionar al usuario
-  const supabaseAdmin = createAdminClient();
+  const supabase = await createClient();
+  const supabaseAdmin = createAdminClient(); 
 
-  // 1. Verificamos si el usuario existe
-  const { data: userData, error: userError } =
-    await supabaseAdmin.auth.admin.getUserByEmail(email);
+  // --- MODIFICACIÓN: Usar RPC para verificar identidades ---
+  // 1. Verificamos si el usuario existe y obtenemos sus 'providers'
+  const { data: identitiesData, error: rpcError } = await supabaseAdmin
+    .rpc('get_user_identity_by_email', { user_email: email });
 
-  if (userError || !userData) {
-    // IMPORTANTE: Por seguridad (para evitar "enumeración de correos"),
-    // siempre devolvemos un mensaje de éxito, incluso si el correo no existe.
-    console.warn(
-      `Intento de reseteo para correo inexistente: ${email}`,
-      userError?.message
-    );
+  if (rpcError) {
+    console.warn(`Error en RPC get_user_identity_by_email: ${email}`, rpcError.message);
+    // Devuelve éxito para no revelar si el usuario existe
     return { success: true, message: "Si la cuenta existe, se envió un correo." };
   }
 
+  // Cast para la data (esperamos un array de {provider: string})
+  const identities = identitiesData as { provider: string }[];
+
+  if (!identities || identities.length === 0) {
+    console.warn(`Intento de reseteo para correo inexistente: ${email}`);
+    // Devuelve éxito para no revelar si el usuario existe
+    return { success: true, message: "Si la cuenta existe, se envió un correo." };
+  }
+  // --- FIN DE LA MODIFICACIÓN ---
+
   // 2. Revisamos las "identidades" del usuario
-  const user = userData.user;
-  const hasPasswordIdentity = user.identities?.some(
+  const hasPasswordIdentity = identities.some(
     (identity) => identity.provider === "email"
   );
-  const hasGoogleIdentity = user.identities?.some(
+  const hasGoogleIdentity = identities.some(
     (identity) => identity.provider === "google"
   );
 
@@ -47,7 +51,6 @@ export async function handlePasswordResetRequest(
   }
 
   // CASO: El usuario tiene una contraseña (o ambas).
-  // Procedemos a enviar el correo de reseteo.
   const { error: resetError } = await supabase.auth.resetPasswordForEmail(
     email,
     {
@@ -60,5 +63,8 @@ export async function handlePasswordResetRequest(
   }
 
   // Éxito
-  return { success: true, message: "¡Correo enviado! Revisa tu bandeja de entrada." };
-}   
+  return {
+    success: true,
+    message: "¡Correo enviado! Revisa tu bandeja de entrada.",
+  };
+}
