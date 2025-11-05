@@ -9,7 +9,6 @@ import {
   Package,
   ShoppingCart,
   Users,
-  // Settings, // <--- Eliminado
   User,
   LogOut,
   PanelLeft,
