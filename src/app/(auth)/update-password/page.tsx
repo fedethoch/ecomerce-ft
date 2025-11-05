@@ -1,4 +1,4 @@
-// app/auth/update-password/page.tsx
+// app/(auth)/update-password/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,24 +18,20 @@ export default function UpdatePasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   
-  // Estado para verificar el enlace
   // 0 = Verificando, 1 = Verificado, 2 = Error/Inválido
   const [verificationState, setVerificationState] = useState(0);
   
   const router = useRouter();
   const supabase = createClient();
 
-  // Paso 1: Escuchar el evento de Supabase
-  // Cuando la página carga, Supabase lee el hash (#) de la URL
-  // y dispara este evento si el token es válido.
+  // --- MODIFICACIÓN AQUÍ ---
+  // Hemos simplificado el useEffect para que SÓLO
+  // escuche el evento PASSWORD_RECOVERY
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === "PASSWORD_RECOVERY") {
           setVerificationState(1); // ¡Verificado! Mostramos el formulario.
-        } else if (event === "INITIAL_SESSION") {
-          // Si el usuario ya está logueado, lo mandamos a su perfil
-          if (session) router.push("/profile");
         }
       }
     );
@@ -54,6 +50,7 @@ export default function UpdatePasswordPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, router]);
+  // --- FIN DE LA MODIFICACIÓN ---
 
 
   // Paso 2: Manejar el envío del formulario
@@ -74,8 +71,6 @@ export default function UpdatePasswordPage() {
 
     setLoading(true);
     
-    // El cliente de Supabase ya tiene la sesión de recuperación
-    // gracias al evento que escuchamos en el useEffect.
     const { error: updateError } = await supabase.auth.updateUser({
       password: password,
     });
@@ -87,7 +82,6 @@ export default function UpdatePasswordPage() {
       console.error("Error update password:", updateError.message);
     } else {
       setMessage("¡Contraseña actualizada con éxito!");
-      // Desconectamos al usuario para que inicie sesión con su nueva contraseña
       await supabase.auth.signOut();
       setTimeout(() => {
         router.push("/login");
@@ -95,7 +89,7 @@ export default function UpdatePasswordPage() {
     }
   };
 
-  // --- Renderizado Condicional ---
+  // --- (El resto del archivo es idéntico) ---
 
   // Estado 0: Verificando el enlace
   if (verificationState === 0) {
@@ -132,7 +126,8 @@ export default function UpdatePasswordPage() {
                 variant="outline"
                 className="w-full"
               >
-              <Link href="/auth/reset-password">
+              {/* Apuntamos a la ruta correcta sin (auth) */}
+              <Link href="/recover-password">
                 Solicitar nuevo enlace
               </Link>
              </Button>
