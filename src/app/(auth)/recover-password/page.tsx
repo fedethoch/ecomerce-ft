@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 // --- MODIFICACIÓN 1: Importar la Server Action ---
-import { handlePasswordResetRequest } from "./auth.actions";
+import { handlePasswordResetRequest } from "../auth-actions";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
