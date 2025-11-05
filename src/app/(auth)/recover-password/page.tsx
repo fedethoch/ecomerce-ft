@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     // 5. Definimos a dónde debe volver el usuario DESPUÉS de hacer clic
     // en el enlace de su correo.
     // ¡DEBES CREAR ESTA PÁGINA! (Ej: /auth/update-password)
-    const redirectUrl = `${window.location.origin}/auth/update-password`;
+    const redirectUrl = `${window.location.origin}/update-password`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
