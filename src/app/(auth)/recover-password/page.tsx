@@ -1,13 +1,14 @@
-"use client"; // <--- 1. Convertido a Cliente
+"use client";
 
-import { useState } from "react"; // <--- 2. Importar hooks
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react"; // <--- 3. Icono de carga
+import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react"; // Importa AlertTriangle
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client"; // <--- 4. Cliente Supabase
+// --- MODIFICACIÓN 1: Importar la Server Action ---
+import { handlePasswordResetRequest } from "./auth.actions";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,38 +16,40 @@ export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // --- MODIFICACIÓN 2: Lógica de handleSubmit actualizada ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setMessage("");
 
-    const supabase = createClient();
-    
-    // 5. Definimos a dónde debe volver el usuario DESPUÉS de hacer clic
-    // en el enlace de su correo.
-    // ¡DEBES CREAR ESTA PÁGINA! (Ej: /auth/update-password)
+    // La URL de redirección (sin /auth/)
     const redirectUrl = `${window.location.origin}/update-password`;
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
+    // Llamamos a nuestra nueva Server Action
+    const result = await handlePasswordResetRequest(email, redirectUrl);
 
     setLoading(false);
 
-    if (error) {
-      setError(
-        "Error: No se pudo enviar el correo. ¿Es la dirección correcta?"
-      );
-      console.error("Error reset password:", error.message);
+    if (result.success) {
+      setMessage(result.message || "¡Correo enviado!");
     } else {
-      setMessage("¡Correo enviado! Revisa tu bandeja de entrada.");
+      // Manejamos el error específico de cuenta de Google
+      if (result.error === "google_account") {
+        setError(
+          result.message || "Esta cuenta usa Google. Inicia sesión con Google."
+        );
+      } else {
+        setError(
+          "Error: No se pudo enviar el correo. ¿Es la dirección correcta?"
+        );
+      }
+      console.error("Error reset password:", result.error);
     }
   };
+  // --- FIN DE LA MODIFICACIÓN ---
 
   return (
-    // --- 6. SOLUCIÓN DE CENTRADO ---
-    // Cambiamos min-h-screen por h-screen para evitar el scroll
     <div className="flex items-center justify-center h-screen p-4">
       <Card className="w-full max-w-md border border-primary rounded-md">
         <CardHeader className="pb-0">
@@ -70,7 +73,6 @@ export default function ForgotPasswordPage() {
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          {/* --- 7. LÓGICA DEL FORMULARIO --- */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -94,8 +96,10 @@ export default function ForgotPasswordPage() {
               </p>
             )}
             {error && (
-              <p className="text-sm text-center font-medium text-destructive">
-                {error}
+              // --- MODIFICACIÓN 3: Mostrar mejor el error de Google ---
+              <p className="text-sm text-center font-medium text-destructive flex items-center justify-center gap-2">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <span className="text-left">{error}</span>
               </p>
             )}
 
