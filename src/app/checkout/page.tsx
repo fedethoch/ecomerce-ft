@@ -105,8 +105,8 @@ const StepIndicator = ({
             index < currentStep
               ? "bg-green-500 text-white"
               : index === currentStep
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-500"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-gray-500"
           }`}
         >
           {index < currentStep ? (
@@ -194,7 +194,6 @@ const Checkout = () => {
   const total = subtotal + (selectedMethodId ? shippingAmount : 0);
 
   useEffect(() => {
-    // Siempre agregamos la opción de retiro en el local
     const pickupOption: ShippingOption = {
       method_id: "pickup",
       label: "Retirar en el local",
@@ -334,6 +333,7 @@ const Checkout = () => {
     }
   };
 
+  // --- (MODIFICACIÓN: Aquí está el cambio) ---
   const handleContinuePayment = async () => {
     const isValid = validateCurrentStep();
     if (!isValid) {
@@ -356,32 +356,35 @@ const Checkout = () => {
 
     setIsLoading(true);
     try {
-      const shipping = selectedShipping
-        ? {
-            id: selectedShipping.method_id,           // "pickup" o id del carrier
-            amount: selectedShipping.amount,          // 0 para pickup
-            label: selectedShipping.label,
-            service_level: selectedShipping.service_level, // "pickup" | "standard" | "express"
-          }
-        : null;
-
-      const result = await actionErrorHandler(async () => {
-        return await createPreference({
-          items: cart.map(i => ({ product_id: i.id, quantity: i.quantity })),
-          payment_method: selectedPaymentMethod,
-          address,                 // el server lo ignora si es pickup
-          shipping_method_id: selectedMethodId!, // "pickup" o el carrier
-        });
+      // 1. Eliminamos el 'actionErrorHandler'
+      // El controlador 'createPreference' ya maneja sus propios errores
+      // y lanza una AppActionException que nuestro 'catch' capturará.
+      const result = await createPreference({
+        items: cart.map(i => ({ product_id: i.id, quantity: i.quantity })),
+        payment_method: selectedPaymentMethod,
+        address,
+        shipping_method_id: selectedMethodId!,
       });
 
       if (result.init_point) {
         router.push(result.init_point);
         return;
+      } else {
+        // Fallback por si el 'result' es exitoso pero no tiene init_point
+        toast.error("No se pudo obtener el enlace de pago. Intenta de nuevo.");
       }
+
     } catch (error: any) {
+      // 2. Este 'catch' ahora recibirá la AppActionException
+      //    lanzada por 'payment-controller.ts'
       const msg =
-        error?.userMessage || error?.message || "No se pudo iniciar el pago";
-      toast.error(msg);
+        error?.userMessage || // <--- ESTE ES EL MENSAJE AMIGABLE
+        error?.message ||
+        "No se pudo iniciar el pago";
+      
+      // 3. El toast ahora mostrará el error específico
+      toast.error(msg); 
+      
       if ((error?.statusCode ?? 0) === 401) {
         router.push("/login?next=/checkout");
       }
@@ -389,12 +392,14 @@ const Checkout = () => {
       setIsLoading(false);
     }
   };
+  // --- (FIN DE LA MODIFICACIÓN) ---
 
   if (isRedirecting) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
+        {/* ... (el resto de tu JSX de la página no cambia) ... */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Finalizar inscripción
@@ -630,10 +635,9 @@ const Checkout = () => {
                                 </span>
                               </div>
                               <p className="text-sm text-gray-600">
-                                {opt.method_id === "pickup" 
+                                {opt.method_id === "pickup"
                                   ? "Disponible inmediatamente • Sin costo de envío"
-                                  : `Est. ${opt.eta_min_days}–${opt.eta_max_days} días${opt.provider ? ` • ${opt.provider}` : ""}`
-                                }
+                                  : `Est. ${opt.eta_min_days}–${opt.eta_max_days} días${opt.provider ? ` • ${opt.provider}` : ""}`}
                               </p>
                             </div>
                           </label>

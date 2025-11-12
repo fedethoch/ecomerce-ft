@@ -112,7 +112,7 @@ export default function Page() {
       </div>
 
       <div className=" flex w-full justify-between items-center">
-        <SearchFilterBar placeholder="Buscar productos..." />
+        
         <Button
           className="w-25%"
           onClick={() => router.push("/admin/products/create")}

@@ -42,8 +42,10 @@ import {
   Plus,
   AlertCircle,
   CheckCircle,
+  Heart, // <-- 1. Importar Heart
 } from "lucide-react";
 import Link from "next/link";
+import { FavoritesView } from "./favorites-view"; // <-- 2. Importar la nueva vista
 
 interface UserProfile {
   full_name?: string;
@@ -104,8 +106,6 @@ export default function ProfilePage() {
         setUser(data.user);
         setProfile(data.user.user_metadata || {});
         setEditForm(data.user.user_metadata || {});
-        // In a real app, you'd fetch addresses from your database
-        // setAddresses(await fetchUserAddresses(data.user.id))
       }
       setLoading(false);
     };
@@ -127,12 +127,12 @@ export default function ProfilePage() {
       listener?.subscription.unsubscribe();
     };
   }, [router]);
-
+  
+  // ... (todas tus funciones handle... no cambian) ...
   const showNotification = (type: "success" | "error", message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-
   const handleUpdateProfile = async () => {
     setSaving(true);
     try {
@@ -155,13 +155,11 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
-
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       showNotification("error", "Las contraseñas no coinciden");
       return;
     }
-
     if (passwordForm.newPassword.length < 6) {
       showNotification(
         "error",
@@ -169,7 +167,6 @@ export default function ProfilePage() {
       );
       return;
     }
-
     setSaving(true);
     try {
       const supabase = createClient();
@@ -195,7 +192,6 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
-
   const handleAvatarUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -205,15 +201,9 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const supabase = createClient();
-
-      // Upload to Supabase Storage (you'd need to set up a bucket)
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}.${fileExt}`;
-
-      // For now, we'll just use a placeholder URL
-      // In a real app, you'd upload to storage and get the URL
       const avatarUrl = `/placeholder.svg?height=96&width=96&query=user avatar ${user.email}`;
-
       const { error } = await supabase.auth.updateUser({
         data: { ...profile, avatar_url: avatarUrl },
       });
@@ -228,7 +218,6 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
-
   const handleLogout = async () => {
     setLoading(true);
     const supabase = createClient();
@@ -240,6 +229,8 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+  // ... (fin de las funciones handle) ...
+
 
   if (loading) {
     return (
@@ -285,7 +276,8 @@ export default function ProfilePage() {
         )}
 
         <Card>
-          <CardHeader className="flex flex-col items-center text-center">
+          {/* ... (Tu CardHeader con el Avatar no cambia) ... */}
+           <CardHeader className="flex flex-col items-center text-center">
             <div className="relative">
               <Avatar className="h-24 w-24 mb-4">
                 <AvatarImage
@@ -326,8 +318,11 @@ export default function ProfilePage() {
             </Badge>
           </CardHeader>
         </Card>
+
+        {/* --- (MODIFICACIÓN 3: Añadimos "Favoritos" al grid) --- */}
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white  rounded-lg border border-border">
+          <TabsList className="grid w-full grid-cols-5 bg-white  rounded-lg border border-border">
+            {/* --- (FIN MODIFICACIÓN 3) --- */}
             <TabsTrigger
               value="profile"
               className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
@@ -340,6 +335,14 @@ export default function ProfilePage() {
             >
               Pedidos
             </TabsTrigger>
+            {/* --- (MODIFICACIÓN 4: Nueva Pestaña "Favoritos") --- */}
+            <TabsTrigger
+              value="favorites"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
+            >
+              Favoritos
+            </TabsTrigger>
+            {/* --- (FIN MODIFICACIÓN 4) --- */}
             <TabsTrigger
               value="addresses"
               className="data-[state=active]:bg-primary data-[state=active]:text-white dark:data-[state=active]:text-white transition-colors"
@@ -353,9 +356,10 @@ export default function ProfilePage() {
               Seguridad
             </TabsTrigger>
           </TabsList>
-
+          
+          {/* ... (TabsContent de "profile" no cambia) ... */}
           <TabsContent value="profile" className="space-y-6">
-            <Card>
+             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Información Personal</CardTitle>
@@ -459,8 +463,9 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
+          {/* ... (TabsContent de "orders" no cambia) ... */}
           <TabsContent value="orders">
-            <Card>
+             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
@@ -486,7 +491,28 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
-
+          
+          {/* --- (MODIFICACIÓN 5: Nuevo Contenido de Pestaña) --- */}
+          <TabsContent value="favorites">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Mis Favoritos
+                </CardTitle>
+                <CardDescription>
+                  Todos los productos que has guardado.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* El componente cliente se encarga de cargar los datos */}
+                <FavoritesView />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          {/* --- (FIN MODIFICACIÓN 5) --- */}
+          
+          {/* ... (TabsContent de "addresses" no cambia) ... */}
           <TabsContent value="addresses">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -519,6 +545,7 @@ export default function ProfilePage() {
             </Card>
           </TabsContent>
 
+          {/* ... (TabsContent de "security" no cambia) ... */}
           <TabsContent value="security">
             <Card>
               <CardHeader>
@@ -546,9 +573,7 @@ export default function ProfilePage() {
                     Cambiar
                   </Button>
                 </div>
-
                 <Separator />
-
                 <div className="flex items-center justify-between p-4 border rounded-lg border-red-200">
                   <div>
                     <h3 className="font-medium text-red-600">
@@ -563,7 +588,6 @@ export default function ProfilePage() {
                     Eliminar
                   </Button>
                 </div>
-
                 <div className="pt-4">
                   <Button
                     onClick={handleLogout}
@@ -580,7 +604,8 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        {/* ... (Tus Diálogos "Dialog" no cambian) ... */}
+         <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Cambiar Contraseña</DialogTitle>

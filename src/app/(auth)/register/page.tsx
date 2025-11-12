@@ -1,3 +1,5 @@
+/* register/page.tsx */
+
 "use client";
 
 import Link from "next/link";
@@ -14,7 +16,7 @@ import { useRouter } from "next/dist/client/components/navigation";
 import { actionErrorHandler } from "@/lib/handlers/actionErrorHandler";
 import { AppActionException } from "@/types/exceptions";
 import { toast } from "sonner";
-import { createUser } from "@/controllers/auth-controller";
+// import { createUser } from "@/controllers/auth-controller"; // No se está usando
 
 export default function RegisterPage() {
   const supabase = createClient();
@@ -40,7 +42,7 @@ export default function RegisterPage() {
         await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `${baseUrl}/auth/callback`,
+            redirectTo: `${baseUrl}/auth/callback`, // Esto está bien
           },
         });
       });
@@ -79,6 +81,9 @@ export default function RegisterPage() {
         return;
       }
 
+      // --- (MODIFICACIÓN: 'emailRedirectTo' ELIMINADO) ---
+      // Esta llamada solo crea el usuario. NO envía un correo.
+      // El correo se enviará en la página /verify.
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -87,17 +92,17 @@ export default function RegisterPage() {
             full_name: name,
             phone: phone,
           },
-          emailRedirectTo: `https://ecomerce-ft.vercel.app/auth/callback`,
+          // 'emailRedirectTo' se ha quitado de aquí.
         },
       });
+      // --- (FIN DE LA MODIFICACIÓN) ---
 
       if (error)
         throw new AppActionException(
-          error.status || 400, // Usamos el status de Supabase o 400 por defecto
-          error.message, // Mensaje técnico
-          "Error de registro", // Mensaje amigable para el usuario
+          error.status || 400,
+          error.message,
+          "Error de registro",
           {
-            // Opcional: mapear errores de Supabase a campos del formulario
             email: [
               error.message.includes("email") ? "Correo inválido" : "",
             ].filter(Boolean),
@@ -107,7 +112,7 @@ export default function RegisterPage() {
           }
         );
 
-      // Solo redirigir si no hay error
+      // Redirige a /verify para que ESA página envíe el correo.
       router.push(`/verify?email=${email}`);
     } catch (error) {
       if (error instanceof AppActionException) {
@@ -167,6 +172,7 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* ... (El resto de tu formulario JSX no cambia) ... */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="text-sm font-medium">
                 Nombre Completo
@@ -364,6 +370,7 @@ export default function RegisterPage() {
               )}
             </Button>
           </form>
+          {/* ... (El resto del JSX no cambia) ... */}
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

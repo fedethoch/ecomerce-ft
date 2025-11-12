@@ -1,48 +1,46 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react"; // <--- Eliminado
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart } from "lucide-react";
-import { useCart } from "@/context/cart-context";
+import { Heart } from "lucide-react";
+// import { useCart } from "@/context/cart-context"; // No se usa aquí
 import type { ProductType } from "@/types/products/products";
 import { useRouter } from "next/navigation";
+import { useFavorites } from "@/hooks/use-favorites"; // <-- 1. Importar hook
+import { cn } from "@/lib/utils"; // <-- Importar cn
 
 interface ProductCardProps {
   product: ProductType;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [isLiked, setIsLiked] = useState(false);
+  // const [isLiked, setIsLiked] = useState(false); // <--- Eliminado
   const router = useRouter();
+  const { favoriteIds, toggleFavorite, isLoading } = useFavorites(); // <-- 2. Usar contexto
+
+  // 3. El estado ahora es global
+  const isLiked = favoriteIds.includes(product.id);
 
   const handleToggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsLiked(!isLiked);
+    e.stopPropagation(); // Evita que se navegue al producto
+    toggleFavorite(product.id); // <-- 4. Llamar a la función del contexto
   };
 
-  // Usamos la primera imagen del array imagePaths
   const mainImage =
     Array.isArray(product.imagePaths) && product.imagePaths.length > 0
       ? product.imagePaths[0]
       : "/placeholder.svg";
 
-  // Debug: muestra el array y la URL que se usará
-  console.log(
-    "imagePaths para producto",
-    product.name,
-    ":",
-    product.imagePaths
-  );
-  console.log("URL usada para", product.name, ":", mainImage);
-
+  // Quitamos los console.log
+  
   return (
     <div className="group relative h-full bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
       <Link href={`/productos/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden">
-          {/* Imagen principal del producto */}
           <Image
             src={mainImage}
             alt={product.name}
@@ -50,7 +48,6 @@ export function ProductCard({ product }: ProductCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
-          {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">
             {product.isNew && (
               <Badge className="bg-green-500 hover:bg-green-600">Nuevo</Badge>
@@ -60,23 +57,28 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          {/* Botón de favoritos */}
           <Button
             variant="ghost"
             size="icon"
             className="absolute top-2 right-2 bg-white/80 hover:bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             onClick={handleToggleLike}
+            disabled={isLoading} // <-- 5. Deshabilitar mientras carga
           >
             <Heart
-              className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+              className={cn( // <-- Usar cn
+                "h-4 w-4 transition-all",
+                isLiked ? "fill-red-500 text-red-500" : "text-gray-500"
+              )}
             />
           </Button>
 
-          {/* Botón rápido para añadir al carrito */}
           <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <Button
               className="w-full bg-white text-black hover:bg-gray-100 z-10"
-              onClick={() => router.push(`/productos/${product.id}`)}
+              onClick={(e) => {
+                e.preventDefault();
+                router.push(`/productos/${product.id}`);
+              }}
             >
               Ver Producto
             </Button>
@@ -93,12 +95,10 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.category}
           </p>
           <div className="flex items-center gap-2">
-            {/* Precio actual */}
             <span className="font-bold text-lg">
               ${product.price.toLocaleString("es-AR")}
             </span>
 
-            {/* Mostrar precio original si hay oferta */}
             {product.isSale && product.originalPrice && (
               <span className="text-sm text-muted-foreground line-through">
                 ${product.originalPrice.toLocaleString("es-AR")}
@@ -106,7 +106,6 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          {/* Tallas disponibles */}
           {product.sizes && product.sizes.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {product.sizes.map((size) => (

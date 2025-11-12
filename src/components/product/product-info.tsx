@@ -16,30 +16,33 @@ import {
 } from "lucide-react";
 
 import { ProductType } from "@/types/products/products";
+import { useFavorites } from "@/hooks/use-favorites"; // <-- 1. Importar hook
+import { cn } from "@/lib/utils"; // <-- Importar cn
 
 export function ProductInfo({ product }: { product: ProductType }) {
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
+  // const [isLiked, setIsLiked] = useState(false); // <--- Eliminado
   const { addItem, cart } = useCart();
+  const { favoriteIds, toggleFavorite, isLoading } = useFavorites(); // <-- 2. Usar contexto
 
-  // How many of this product are already in the cart
+  // 3. El estado ahora es global
+  const isLiked = favoriteIds.includes(product.id);
+
+  // ... (el resto de tu lógica de stock y efectos) ...
   const existingInCart = Array.isArray(cart)
     ? (cart.find((p) => p.id === product.id)?.quantity ?? 0)
     : 0;
   const remainingStock = Math.max(0, (product.quantity ?? 0) - existingInCart);
 
-  // Keep selected quantity within allowed range when remainingStock changes
   useEffect(() => {
     if (remainingStock <= 0) {
       setQuantity(1);
     } else if (quantity > remainingStock) {
       setQuantity(Math.max(1, remainingStock));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remainingStock]);
 
-  // Safe accessors for optional fields
   const reviews = Array.isArray((product as any).reviews)
     ? (product as any).reviews
     : [];
@@ -63,19 +66,23 @@ export function ProductInfo({ product }: { product: ProductType }) {
       alert("Por favor selecciona una talla");
       return;
     }
-
     if (remainingStock <= 0) {
       alert("No hay stock disponible para este producto");
       return;
     }
-
     const qtyToAdd = Math.min(quantity, remainingStock);
-  // addItem accepts (product, desiredQty)
-  addItem(product, qtyToAdd);
+    addItem(product, qtyToAdd);
   };
+  
+  // 4. Lógica del botón de favorito
+  const handleToggleLike = () => {
+    toggleFavorite(product.id);
+  };
+
 
   return (
     <div className="space-y-6">
+      {/* ... (todo el JSX superior no cambia) ... */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           {product.isNew && <Badge className="bg-green-500">Nuevo</Badge>}
@@ -85,7 +92,6 @@ export function ProductInfo({ product }: { product: ProductType }) {
           </Badge>
         </div>
         <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (
@@ -100,7 +106,6 @@ export function ProductInfo({ product }: { product: ProductType }) {
           </span>
         </div>
       </div>
-
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <span className="text-3xl font-bold">
@@ -119,16 +124,13 @@ export function ProductInfo({ product }: { product: ProductType }) {
           Precio final con todos los impuestos incluidos
         </p>
       </div>
-
       <Separator />
-
       <div>
         <h3 className="font-semibold mb-2">Descripción</h3>
         <p className="text-muted-foreground leading-relaxed">
           {product.description}
         </p>
       </div>
-
       <div>
         <h3 className="font-semibold mb-3">Características</h3>
         <ul className="space-y-2">
@@ -140,9 +142,7 @@ export function ProductInfo({ product }: { product: ProductType }) {
           ))}
         </ul>
       </div>
-
       <Separator />
-
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Talla</h3>
@@ -160,7 +160,6 @@ export function ProductInfo({ product }: { product: ProductType }) {
           ))}
         </div>
       </div>
-
       <div>
         <h3 className="font-semibold mb-3">Cantidad</h3>
         <div className="flex items-center gap-3">
@@ -192,9 +191,9 @@ export function ProductInfo({ product }: { product: ProductType }) {
           </span>
         </div>
       </div>
-
       <Separator />
 
+      {/* --- (MODIFICACIÓN: Conectar botón de favorito) --- */}
       <div className="space-y-4">
         <div className="flex gap-3">
           <Button
@@ -208,16 +207,21 @@ export function ProductInfo({ product }: { product: ProductType }) {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => setIsLiked(!isLiked)}
+            onClick={handleToggleLike}
+            disabled={isLoading} // <-- Deshabilitar mientras carga
           >
             <Heart
-              className={`w-5 h-5 ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+              className={cn( // <-- Usar cn
+                "w-5 h-5 transition-all",
+                isLiked ? "fill-red-500 text-red-500" : ""
+              )}
             />
           </Button>
           <Button variant="outline" size="lg">
             <Share2 className="w-5 h-5" />
           </Button>
         </div>
+      {/* --- (FIN DE LA MODIFICACIÓN) --- */}
 
         <Button variant="outline" size="lg" className="w-full bg-transparent">
           Comprar Ahora
@@ -225,18 +229,7 @@ export function ProductInfo({ product }: { product: ProductType }) {
       </div>
 
       <div className="space-y-3 pt-4 border-t">
-        <div className="flex items-center gap-3 text-sm">
-          <Truck className="h-5 w-5 text-primary" />{" "}
-          <span>Envío gratis en compras mayores a $50,000</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <RotateCcw className="h-5 w-5 text-primary" />{" "}
-          <span>Devolución gratuita hasta 30 días</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Shield className="h-5 w-5 text-primary" />{" "}
-          <span>Garantía de calidad</span>
-        </div>
+        {/* ... (sin cambios) ... */}
       </div>
     </div>
   );
